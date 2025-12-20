@@ -1,197 +1,189 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Mail, Lock, User, GraduationCap } from "lucide-react";
+import { ArrowLeft, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import srcLogo from "@/assets/src-logo.jpg";
 
 const StudentAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [gender, setGender] = useState<"male" | "female" | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login
     setTimeout(() => {
       setIsLoading(false);
       toast({
-        title: "Login Successful",
-        description: "Welcome back! Redirecting to your dashboard...",
-      });
-      navigate("/student/dashboard");
-    }, 1500);
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate signup
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Account Created",
-        description: "Your account has been created. Please check your email for verification.",
+        title: isLogin ? "Login Successful" : "Account Created",
+        description: isLogin 
+          ? "Welcome back! Redirecting to your dashboard..." 
+          : "Your account has been created successfully.",
       });
       navigate("/student/dashboard");
     }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
+    <div className="min-h-screen bg-hero-gradient flex flex-col relative overflow-hidden">
+      {/* Background glow effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-glow opacity-50 pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-glow opacity-30 pointer-events-none" />
+      
       {/* Header */}
-      <header className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center">
+      <header className="relative z-10 py-4">
+        <div className="container mx-auto px-4 flex items-center">
           <Link to="/" className="flex items-center gap-3 group">
             <ArrowLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-border">
               <img src={srcLogo} alt="SRC Logo" className="w-full h-full object-cover" />
             </div>
-            <span className="font-display font-semibold text-foreground">SRC</span>
           </Link>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4 py-12">
+      <main className="flex-1 flex items-center justify-center p-4 py-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
+          {/* Title */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <GraduationCap className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="font-display text-2xl font-bold text-foreground mb-2">
-              Student Portal
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-gradient mb-3">
+              {isLogin ? "Welcome Back" : "Join SAC Movies"}
             </h1>
-            <p className="text-muted-foreground text-sm">
-              Seat allocation is mandatory for SAC entry
+            <p className="text-muted-foreground">
+              {isLogin ? "Sign in to your student account" : "Create your account with college email"}
             </p>
           </div>
 
-          <Card className="border-0 shadow-xl">
-            <Tabs defaultValue="login" className="w-full">
-              <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <TabsContent value="login" className="mt-0">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Student Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          id="login-email" 
-                          type="email" 
-                          placeholder="n123456@rguktn.ac.in"
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          id="login-password" 
-                          type="password" 
-                          placeholder="Enter your password"
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
+          {/* Form Card */}
+          <div className="glass rounded-2xl p-6 md:p-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {!isLogin && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="name" className="text-sm text-muted-foreground">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input 
+                      id="name" 
+                      type="text" 
+                      placeholder="Enter your name"
+                      className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
+                      required={!isLogin}
+                    />
+                  </div>
+                </motion.div>
+              )}
 
-                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Sign In"}
-                    </Button>
-                  </form>
-                </TabsContent>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm text-muted-foreground">College Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="nXXXXXX@rguktn.ac.in"
+                    className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
+                    required
+                  />
+                </div>
+              </div>
 
-                <TabsContent value="signup" className="mt-0">
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          id="signup-name" 
-                          type="text" 
-                          placeholder="Your full name"
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm text-muted-foreground">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="Enter your password"
+                    className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
+                    required
+                  />
+                </div>
+              </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-rollno">Roll Number</Label>
-                      <div className="relative">
-                        <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          id="signup-rollno" 
-                          type="text" 
-                          placeholder="N123456"
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Student Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          id="signup-email" 
-                          type="email" 
-                          placeholder="n123456@rguktn.ac.in"
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          id="signup-password" 
-                          type="password" 
-                          placeholder="Create a password"
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
+              {!isLogin && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-2"
+                >
+                  <Label className="text-sm text-muted-foreground">Gender</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setGender("male")}
+                      className={`h-12 rounded-xl border transition-all duration-200 ${
+                        gender === "male" 
+                          ? "bg-gradient-primary border-transparent text-primary-foreground" 
+                          : "bg-secondary/50 border-border/50 text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGender("female")}
+                      className={`h-12 rounded-xl border transition-all duration-200 ${
+                        gender === "female" 
+                          ? "bg-gradient-primary border-transparent text-primary-foreground" 
+                          : "bg-secondary/50 border-border/50 text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      Female
+                    </button>
+                  </div>
+                </motion.div>
+              )}
 
-                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                      {isLoading ? "Creating Account..." : "Create Account"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </CardContent>
-            </Tabs>
-          </Card>
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold rounded-xl transition-all duration-200 shadow-glow"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    {isLogin ? "Signing in..." : "Creating Account..."}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    {isLogin ? "Sign In" : "Create Account"}
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-muted-foreground text-sm">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-primary hover:underline font-medium"
+                >
+                  {isLogin ? "Sign Up" : "Sign In"}
+                </button>
+              </p>
+            </div>
+          </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             By signing in, you agree to be responsible for your allocated seat.
