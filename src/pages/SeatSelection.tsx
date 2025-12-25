@@ -1,54 +1,113 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Monitor, AlertTriangle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient, authHelper } from "@/lib/apiClient";
 import srcLogo from "@/assets/src-logo.jpg";
-import { getShowById, getMovieById } from "@/data/mockData";
 import { ROWS, getSeatsForRow, hasCenterAisle, type SeatStatus } from "@/data/seatLayout";
+import type { Show, Movie, SeatRow } from "@/lib/types";
 
 const SeatSelection = () => {
   const { showId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
+  const [selectedSeats, setSelectedSeats] = useState<Set<string>>(new Set());
   const [isConfirming, setIsConfirming] = useState(false);
-  
-  const show = getShowById(showId || "");
-  const movie = show ? getMovieById(show.movieId) : null;
+  const [show, setShow] = useState<Show | null>(null);
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [seatRows, setSeatRows] = useState<SeatRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const bookedSeats = new Set(['A5', 'A6', 'B10', 'C15', 'D20', 'E25', 'F30', 'G12', 'H8']);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const showData = await apiClient.getShow(showId || "");
+        setShow(showData);
+        const movieData = await apiClient.getMovie(showData.movieId);
+        setMovie(movieData);
+        const seatsData = await apiClient.getSeats(showId || "");
+        setSeatRows(seatsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [showId]);
+
+  const getBookedSeats = (): Set<string> => {
+    const booked = new Set<string>();
+    seatRows.forEach(row => {
+      row.seats.forEach(seat => {
+        if (seat.status === 'booked') {
+          booked.add(seat.id);
+        }
+      });
+    });
+    return booked;
+  };
+
+  const bookedSeats = getBookedSeats();
 
   const getSeatStatus = (seatId: string): SeatStatus => {
-    if (selectedSeat === seatId) return 'selected';
+    if (selectedSeats.has(seatId)) return 'selected';
     if (bookedSeats.has(seatId)) return 'booked';
     return 'available';
   };
 
   const handleSeatClick = (seatId: string) => {
     if (bookedSeats.has(seatId)) return;
-    setSelectedSeat(seatId === selectedSeat ? null : seatId);
+    const newSelected = new Set(selectedSeats);
+    if (newSelected.has(seatId)) {
+      newSelected.delete(seatId);
+    } else {
+      newSelected.add(seatId);
+    }
+    setSelectedSeats(newSelected);
   };
 
-  const handleConfirm = () => {
-    if (selectedSeat) {
-      setIsConfirming(true);
-      setTimeout(() => {
-        toast({
-          title: "Seat Confirmed!",
-          description: `Seat ${selectedSeat} has been allocated to you.`,
-        });
-        navigate(`/student/booking-confirmation/${showId}/${selectedSeat}`);
-      }, 800);
+  const handleConfirm = async () => {
+    if (selectedSeats.size === 0) return;
+    
+    const token = authHelper.getToken();
+    if (!token) {
+      toast({ title: "Error", description: "Please login first", variant: "destructive" });
+      navigate("/student/login");
+      return;
+    }
+
+    setIsConfirming(true);
+    try {
+      const booking = await apiClient.createBooking(token, showId || "", Array.from(selectedSeats));
+      toast({
+        title: "Booking Confirmed!",
+        description: `${selectedSeats.size} seat(s) booked for ₹${booking.amount}`,
+      });
+      navigate(`/student/booking-confirmation/${showId}/${Array.from(selectedSeats).join(',')}`);
+    } catch (err) {
+      toast({
+        title: "Booking Failed",
+        description: err instanceof Error ? err.message : "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConfirming(false);
     }
   };
 
-  if (!show || !movie) {
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-background">Loading seats...</div>;
+  }
+
+  if (error || !show || !movie) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Show not found</p>
+        <p className="text-muted-foreground">{error || "Show not found"}</p>
       </div>
     );
   }
@@ -65,7 +124,7 @@ const SeatSelection = () => {
               <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20">
                 <img src={srcLogo} alt="SRC" className="w-full h-full object-cover" />
               </div>
-              <span className="font-display font-semibold text-white">Select Your Seat</span>
+              <span className="font-display font-semibold text-white">Select Seats</span>
             </div>
           </div>
         </div>
@@ -85,20 +144,18 @@ const SeatSelection = () => {
         {/* Seat Grid - Organized */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="overflow-x-auto pb-4">
           <div className="min-w-[700px] max-w-4xl mx-auto">
-            {ROWS.map((rowName) => (
-              <div key={rowName} className="flex items-center gap-3 mb-1.5">
-                <span className="w-6 text-xs text-white/50 font-medium text-right">{rowName}</span>
+            {seatRows.map((row) => (
+              <div key={row.name} className="flex items-center gap-3 mb-1.5">
+                <span className="w-6 text-xs text-white/50 font-medium text-right">{row.name}</span>
                 <div className="flex-1 flex justify-center gap-1">
-                  {Array.from({ length: getSeatsForRow(rowName) }, (_, i) => {
-                    const seatNum = i + 1;
-                    const seatId = `${rowName}${seatNum}`;
-                    const status = getSeatStatus(seatId);
-                    const showAisle = hasCenterAisle(rowName) && seatNum === 17;
+                  {row.seats.map((seat) => {
+                    const status = getSeatStatus(seat.id);
+                    const showAisle = hasCenterAisle(row.name) && seat.number === 17;
                     
                     return (
-                      <div key={seatId} className="flex items-center">
+                      <div key={seat.id} className="flex items-center">
                         <button
-                          onClick={() => handleSeatClick(seatId)}
+                          onClick={() => handleSeatClick(seat.id)}
                           disabled={status === 'booked'}
                           className={`w-6 h-6 rounded text-[9px] font-medium transition-all duration-200 ${
                             status === 'selected' 
@@ -108,14 +165,14 @@ const SeatSelection = () => {
                                 : 'bg-success hover:bg-success/80 text-white cursor-pointer hover:scale-105'
                           }`}
                         >
-                          {seatNum}
+                          {seat.number}
                         </button>
                         {showAisle && <div className="w-6" />}
                       </div>
                     );
                   })}
                 </div>
-                <span className="w-6 text-xs text-white/50 font-medium">{rowName}</span>
+                <span className="w-6 text-xs text-white/50 font-medium">{row.name}</span>
               </div>
             ))}
           </div>
@@ -129,31 +186,32 @@ const SeatSelection = () => {
         </div>
 
         {/* Selection Panel */}
-        {selectedSeat && (
+        {selectedSeats.size > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Card className="max-w-md mx-auto border-0 shadow-2xl bg-card">
               <CardContent className="p-6">
                 <div className="text-center mb-5">
-                  <p className="text-sm text-muted-foreground mb-1">Your Selected Seat</p>
-                  <p className="text-5xl font-display font-semibold text-foreground">{selectedSeat}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Selected Seats</p>
+                  <p className="text-3xl font-display font-semibold text-foreground">{Array.from(selectedSeats).join(', ')}</p>
                   <p className="text-sm text-muted-foreground mt-2">{movie.title} • {show.time}</p>
+                  <p className="text-lg font-semibold text-accent mt-3">₹{selectedSeats.size * (show.price || 250)}</p>
                 </div>
                 <div className="bg-destructive/10 p-4 rounded-xl mb-5 flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-destructive">Damage to this seat will be traced to you.</p>
+                  <p className="text-sm text-destructive">Damage to seats will be traced to you.</p>
                 </div>
                 <Button 
                   onClick={handleConfirm} 
                   className="w-full rounded-full" 
                   size="lg" 
-                  disabled={isConfirming}
+                  disabled={isConfirming || selectedSeats.size === 0}
                 >
                   {isConfirming ? (
                     <>Confirming...</>
                   ) : (
                     <>
                       <Check className="w-5 h-5 mr-2" />
-                      Confirm Seat {selectedSeat}
+                      Confirm {selectedSeats.size} Seat(s)
                     </>
                   )}
                 </Button>

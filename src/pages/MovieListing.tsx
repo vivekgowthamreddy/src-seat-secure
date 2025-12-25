@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Clock, Users, Filter, X } from "lucide-react";
@@ -6,13 +6,55 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import srcLogo from "@/assets/src-logo.jpg";
-import { movies, shows, getMovieById } from "@/data/mockData";
+import { apiClient } from "@/lib/apiClient";
 
 type GenderFilter = 'all' | 'boys' | 'girls';
+
+interface Movie {
+  id: string;
+  title: string;
+  poster: string;
+  description: string;
+  duration: string;
+  genre: string;
+  language: string;
+}
+
+interface Show {
+  id: string;
+  movieId: string;
+  date: string;
+  time: string;
+  category: 'boys' | 'girls' | 'all';
+  bookedSeats: number;
+  totalSeats: number;
+}
 
 const MovieListing = () => {
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
   const [showFilter, setShowFilter] = useState(false);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [shows, setShows] = useState<Show[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [moviesData, showsData] = await Promise.all([
+          apiClient.getMovies(),
+          apiClient.getShows(),
+        ]);
+        setMovies(moviesData);
+        setShows(showsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   // Filter shows based on gender
   const filteredShows = shows.filter(show => {
@@ -23,6 +65,14 @@ const MovieListing = () => {
   // Get unique movies that have matching shows
   const movieIdsWithShows = new Set(filteredShows.map(s => s.movieId));
   const filteredMovies = movies.filter(m => movieIdsWithShows.has(m.id));
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading movies...</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -6,29 +6,54 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient, authHelper } from "@/lib/apiClient";
 import srcLogo from "@/assets/src-logo.jpg";
 
 const StudentAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [gender, setGender] = useState<"male" | "female" | null>(null);
+  const [formData, setFormData] = useState({ email: "", password: "", name: "" });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      if (isLogin) {
+        const response = await apiClient.login(formData.email, formData.password);
+        authHelper.setToken(response.accessToken);
+        authHelper.setUser(response.user);
+        toast({
+          title: "Login Successful",
+          description: "Welcome back! Redirecting to your dashboard...",
+        });
+        navigate("/student/dashboard");
+      } else {
+        await apiClient.register(formData.email, formData.password, formData.name);
+        toast({
+          title: "Account Created",
+          description: "Your account has been created. Please sign in.",
+        });
+        setIsLogin(true);
+        setFormData({ email: "", password: "", name: "" });
+      }
+    } catch (error) {
       toast({
-        title: isLogin ? "Login Successful" : "Account Created",
-        description: isLogin 
-          ? "Welcome back! Redirecting to your dashboard..." 
-          : "Your account has been created successfully.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
       });
-      navigate("/student/dashboard");
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,6 +108,8 @@ const StudentAuth = () => {
                       id="name" 
                       type="text" 
                       placeholder="Enter your name"
+                      value={formData.name}
+                      onChange={handleChange}
                       className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
                       required={!isLogin}
                     />
@@ -98,6 +125,8 @@ const StudentAuth = () => {
                     id="email" 
                     type="email" 
                     placeholder="nXXXXXX@rguktn.ac.in"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
                     required
                   />
@@ -112,6 +141,8 @@ const StudentAuth = () => {
                     id="password" 
                     type="password" 
                     placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
                     className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
                     required
                   />
