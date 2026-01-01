@@ -16,14 +16,25 @@ export class MailService {
 
         if (host) {
             // Use configured SMTP
+            const port = this.configService.get<number>('SMTP_PORT') || 587;
+            const isSecure = port === 465; // Gmail uses 465 for SSL, 587 for TLS
+
+            this.logger.log(`Initializing SMTP with Host: ${host}, Port: ${port}, Secure: ${isSecure}`);
+
             this.transporter = nodemailer.createTransport({
-                host: this.configService.get<string>('SMTP_HOST'),
-                port: this.configService.get<number>('SMTP_PORT') || 587,
-                secure: false, // true for 465, false for other ports
+                host: host,
+                port: port,
+                secure: isSecure,
                 auth: {
                     user: this.configService.get<string>('SMTP_USER'),
                     pass: this.configService.get<string>('SMTP_PASS'),
                 },
+                // optimizing for cloud environments
+                connectionTimeout: 10000, // 10 seconds
+                greetingTimeout: 10000,
+                socketTimeout: 10000,
+                logger: true,
+                debug: true,
             });
             this.logger.log(`Configured with SMTP host: ${host}`);
         } else {
