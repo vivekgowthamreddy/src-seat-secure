@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, Calendar, Clock, Armchair, Film, QrCode, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import srcLogo from "@/assets/src-logo.jpg";
+import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
 
 import { User, Booking, Show, Movie } from "@/lib/types";

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import srcLogo from "@/assets/src-logo.jpg";
+import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
 import { TOTAL_SEATS, generateSeatLayout, getGapPosition, getGapClass } from "@/data/seatLayout";
 import { Movie, Show } from "@/lib/types";

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Film, Calendar, Clock, Users, Armchair, LogOut, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import srcLogo from "@/assets/src-logo.jpg";
+import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { User, Booking, Show, Movie } from "@/lib/types";
