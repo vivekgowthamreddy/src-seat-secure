@@ -29,12 +29,7 @@ export class AuthService {
         await this.usersService.update((existing as any)._id, { verificationToken });
 
         console.log(`[AUTH] Resending OTP for ${email}: ${verificationToken}`);
-        try {
-          await this.mailService.sendVerificationEmail(email, verificationToken);
-        } catch (error) {
-          console.error('Email sending failed:', error);
-          throw new BadRequestException('Failed to send verification email.');
-        }
+        this.mailService.sendVerificationEmail(email, verificationToken); // Fire and forget
         return { message: 'Account exists but was not verified. A new OTP has been sent to your email.' };
       }
       throw new BadRequestException('Account already exists and is verified. Please log in.');
@@ -53,16 +48,9 @@ export class AuthService {
       isVerified: false,
     });
 
-    // Send Real Email
+    // Send Real Email (Background)
     console.log(`[AUTH] Generated OTP for ${email}: ${verificationToken}`);
-    try {
-      await this.mailService.sendVerificationEmail(email, verificationToken);
-    } catch (error) {
-      // If email fails, delete the user so they can try again
-      await this.usersService.deleteByEmail(email);
-      console.error('Email sending failed:', error);
-      throw new BadRequestException('Failed to send verification email. Please check your email address and internet connection.');
-    }
+    this.mailService.sendVerificationEmail(email, verificationToken); // Fire and forget
 
     return { message: 'Registration successful. Please verify your email with the OTP sent.' };
   }
