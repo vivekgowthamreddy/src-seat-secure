@@ -59,12 +59,26 @@ export class MailService {
     }
 
     async sendVerificationEmail(to: string, otp: string) {
-        if (!this.transporter) {
-            await this.initTransport();
-        }
+        // Create a fresh transporter for every email to avoid stale connections
+        const host = this.configService.get<string>('SMTP_HOST');
+        const port = this.configService.get<number>('SMTP_PORT') || 587;
+        const isSecure = port === 465;
 
-        // Fire-and-forget: Don't await the email sending to prevent blocking the response
-        this.transporter.sendMail({
+        const transporter = nodemailer.createTransport({
+            host: host,
+            port: port,
+            secure: isSecure,
+            auth: {
+                user: this.configService.get<string>('SMTP_USER'),
+                pass: this.configService.get<string>('SMTP_PASS'),
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+
+        // Fire-and-forget
+        transporter.sendMail({
             from: `"SAC Booking" <${this.configService.get<string>('SMTP_USER')}>`,
             to,
             subject: 'Verify Your Email - SAC Seat Secure',
@@ -85,8 +99,6 @@ export class MailService {
             this.logger.error('Failed to send email in background', error);
         });
 
-        // Return immediately
         return { message: 'Email queued' };
-
     }
 }
