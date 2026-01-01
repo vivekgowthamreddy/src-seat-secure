@@ -21,4 +21,9 @@ export class AuthController {
   async verify(@Body() body: { email: string; otp: string }) {
     return this.authService.verifyEmail(body.email, body.otp);
   }
+
+  @Post('google')
+  async googleAuth(@Body() body: { token: string }) {
+    return this.authService.googleLogin(body.token);
+  }
 }

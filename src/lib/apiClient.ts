@@ -23,6 +23,26 @@ export const apiClient = {
     return res.json();
   },
 
+  googleLogin: async (token: string) => {
+    const res = await fetch(`${API_BASE}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  verify: async (email: string, otp: string) => {
+    const res = await fetch(`${API_BASE}/auth/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   // Movies
   getMovies: async () => {
     const res = await fetch(`${API_BASE}/movies`);
