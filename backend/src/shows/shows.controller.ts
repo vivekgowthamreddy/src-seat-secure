@@ -14,7 +14,7 @@ export class ShowsController {
     return shows.map((s: any) => ({
       id: s._id,
       movieId: s.movieId && typeof s.movieId === 'object' && '_id' in s.movieId
-        ? { ...s.movieId, id: s.movieId._id }
+        ? { ...s.movieId, id: s.movieId._id, poster: s.movieId.posterUrl }
         : s.movieId,
       date: s.startTime?.toISOString().slice(0, 10),
       time: s.startTime?.toISOString().slice(11, 16),
@@ -30,7 +30,7 @@ export class ShowsController {
     return {
       id: s._id,
       movieId: s.movieId && typeof s.movieId === 'object' && '_id' in s.movieId
-        ? { ...s.movieId, id: s.movieId._id }
+        ? { ...s.movieId, id: s.movieId._id, poster: s.movieId.posterUrl }
         : s.movieId,
       date: s.startTime?.toISOString().slice(0, 10),
       time: s.startTime?.toISOString().slice(11, 16),
