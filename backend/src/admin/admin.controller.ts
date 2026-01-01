@@ -94,6 +94,45 @@ export class AdminController {
     return { hasBookings: bookings.length > 0, count: bookings.length };
   }
 
+  // Global Seat Management
+  @Get('seats/global')
+  async getGlobalSeats() {
+    console.log('[AdminController] GET /admin/seats/global called');
+    try {
+      const seats = await this.seatsService.getGlobalSeats();
+      console.log('[AdminController] Global seats retrieved:', seats.length);
+      return seats;
+    } catch (e) {
+      console.error('[AdminController] Error getting global seats:', e);
+      throw e;
+    }
+  }
+
+  @Put('seats/global/:label')
+  async toggleGlobalSeatDamage(
+    @Param('label') label: string,
+    @Body() body: { isDamaged: boolean }
+  ) {
+    console.log(`[AdminController] Toggling damage for ${label}:`, body);
+
+    if (body === undefined || typeof body.isDamaged === 'undefined') {
+      console.error('[AdminController] isDamaged is undefined');
+      throw new Error('isDamaged is required');
+    }
+
+    // Ensure boolean
+    const isDamaged = body.isDamaged === true || String(body.isDamaged) === 'true';
+
+    try {
+      const result = await this.seatsService.toggleGlobalDamage(label, isDamaged);
+      console.log('[AdminController] Toggle result:', result);
+      return result;
+    } catch (e) {
+      console.error('[AdminController] Service error:', e);
+      throw e;
+    }
+  }
+
   @Get('shows/:showId/download-report')
   async downloadReport(@Param('showId') showId: string, @Res() res: Response) {
     const bookings = await this.bookingsService.getBookingsByShow(showId);

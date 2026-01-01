@@ -29,7 +29,28 @@ const MovieDetails = () => {
 
         // Fetch all shows and filter for this movie
         const showsData = await apiClient.getShows(id);
-        setMovieShows(showsData);
+
+        // Filter based on gender
+        const user = authHelper.getUser();
+        const filteredShows = showsData.filter(show => {
+          if (!user) return true;
+          if (user.role === 'admin') return true;
+
+          const gender = user.gender?.toLowerCase();
+
+          if (gender === 'male') {
+            return show.category === 'boys' || show.category === 'all';
+          }
+
+          if (gender === 'female') {
+            return show.category === 'girls' || show.category === 'all';
+          }
+
+          // Default for users without gender (old accounts) -> Show only 'all'
+          return show.category === 'all';
+        });
+
+        setMovieShows(filteredShows);
 
         // Fetch user bookings if logged in
         if (authHelper.isAuthenticated()) {

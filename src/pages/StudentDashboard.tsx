@@ -45,8 +45,29 @@ const StudentDashboard = () => {
 
         // Fetch Upcoming Shows
         const allShows = await apiClient.getShows();
+
+        // Filter based on gender
+        const userData = authHelper.getUser();
+        const filteredShows = allShows.filter(show => {
+          if (!userData) return true;
+          if (userData.role === 'admin') return true;
+
+          const gender = userData.gender?.toLowerCase();
+
+          if (gender === 'male') {
+            return show.category === 'boys' || show.category === 'all';
+          }
+
+          if (gender === 'female') {
+            return show.category === 'girls' || show.category === 'all';
+          }
+
+          // Default for users without gender (old accounts) -> Show only 'all'
+          return show.category === 'all';
+        });
+
         // Filter out past shows? For now just take 3.
-        setUpcomingShows(allShows.slice(0, 3));
+        setUpcomingShows(filteredShows.slice(0, 3));
 
       } catch (error) {
         console.error("Failed to load dashboard data", error);

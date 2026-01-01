@@ -29,15 +29,33 @@ export const getSeatsForRow = (rowName: string): number => {
   return 38;
 };
 
+// Returns the seat number after which there is a visual gap
+export const getGapPosition = (rowName: string): number => {
+  if (['M', 'N', 'O', 'P', 'Q', 'R'].includes(rowName)) {
+    return 17; // Gap after seat 17 for M-R (where Cabin is)
+  }
+  return 19; // Gap after seat 19 for A-L
+};
+
+export const getGapClass = (rowName: string): string => {
+  if (['M', 'N', 'O', 'P', 'Q', 'R'].includes(rowName)) {
+    // Gap covers 2 missing seats on left + 2 missing on right + standard aisle
+    // (SeatWidth 24px + Gap 4px) * 2 * 2 + Aisle 32px = 56 + 56 + 32 = 144px -> w-36
+    return 'w-36';
+  }
+  return 'w-8';
+}
+
 export const hasCenterAisle = (rowName: string): boolean => {
-  return ['M', 'N', 'O', 'P', 'Q', 'R'].includes(rowName);
+  // All rows now have a visual gap/aisle
+  return true;
 };
 
 export const generateSeatLayout = (): Row[] => {
   return ROWS.map((rowName) => {
     const seatCount = getSeatsForRow(rowName);
     const seats: Seat[] = [];
-    
+
     for (let i = 1; i <= seatCount; i++) {
       seats.push({
         id: `${rowName}${i}`,
@@ -46,7 +64,7 @@ export const generateSeatLayout = (): Row[] => {
         status: 'available',
       });
     }
-    
+
     return {
       name: rowName,
       seats,

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import srcLogo from "@/assets/src-logo.jpg";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, authHelper } from "@/lib/apiClient";
 
 import { Movie, Show } from "@/lib/types";
 
@@ -36,8 +36,32 @@ const MovieListing = () => {
     loadData();
   }, []);
 
-  // Filter shows based on gender (Removed filter, so just all shows)
-  const filteredShows = shows;
+  // Filter shows based on gender
+  /* 
+   * Strict Gender Filtering:
+   * - Admin: See everything
+   * - Male: See 'boys' + 'all'
+   * - Female: See 'girls' + 'all'
+   * - Unknown/Old Account: See 'all' ONLY
+   */
+  const user = authHelper.getUser();
+  const filteredShows = shows.filter(show => {
+    if (!user) return true; // Should ideally redirect to login
+    if (user.role === 'admin') return true;
+
+    const gender = user.gender?.toLowerCase();
+
+    if (gender === 'male') {
+      return show.category === 'boys' || show.category === 'all';
+    }
+
+    if (gender === 'female') {
+      return show.category === 'girls' || show.category === 'all';
+    }
+
+    // Default for users without gender (old accounts) -> Show only 'all'
+    return show.category === 'all';
+  });
 
   // Get unique movies that have matching shows
   const movieIdsWithShows = new Set(filteredShows.map(s => {

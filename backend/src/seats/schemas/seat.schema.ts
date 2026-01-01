@@ -17,7 +17,7 @@ export class Seat {
   @Prop({ required: true })
   number: number;
 
-  @Prop({ required: true, enum: ['available', 'booked', 'unavailable'], default: 'available' })
+  @Prop({ required: true, enum: ['available', 'booked', 'unavailable', 'damaged'], default: 'available' })
   status: string;
 
   @Prop()

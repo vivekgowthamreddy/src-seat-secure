@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiClient, authHelper } from "@/lib/apiClient";
 import srcLogo from "@/assets/src-logo.jpg";
 import heroImage from "@/assets/sac-auditorium-real.jpg";
-import { ROWS, getSeatsForRow, hasCenterAisle, type SeatStatus } from "@/data/seatLayout";
+import { ROWS, getSeatsForRow, hasCenterAisle, getGapPosition, getGapClass, type SeatStatus } from "@/data/seatLayout";
 import type { Show, Movie, SeatRow } from "@/lib/types";
 
 const SeatSelection = () => {
@@ -62,7 +62,7 @@ const SeatSelection = () => {
     const unavailable = new Set<string>();
     seatRows.forEach(row => {
       row.seats.forEach(seat => {
-        if (seat.status === 'unavailable') {
+        if (seat.status === 'unavailable' || seat.status === 'damaged') {
           unavailable.add(seat.id);
         }
       });
@@ -73,15 +73,21 @@ const SeatSelection = () => {
   const bookedSeats = getBookedSeats();
   const unavailableSeats = getUnavailableSeats();
 
-  const getSeatStatus = (seatId: string): SeatStatus | 'unavailable' => {
+  const getSeatStatus = (seatId: string): SeatStatus | 'unavailable' | 'damaged' => {
     if (selectedSeats.has(seatId)) return 'selected';
     if (bookedSeats.has(seatId)) return 'booked';
+    // Check specific status from row data for precise styling
+    const seat = seatRows.flatMap(r => r.seats).find(s => s.id === seatId);
+    if (seat?.status === 'damaged') return 'damaged';
     if (unavailableSeats.has(seatId)) return 'unavailable';
     return 'available';
   };
 
   const handleSeatClick = (seatId: string) => {
-    if (bookedSeats.has(seatId) || unavailableSeats.has(seatId)) return;
+    // Prevent clicking booked, unavailable, or damaged seats
+    const seat = seatRows.flatMap(r => r.seats).find(s => s.id === seatId);
+    if (bookedSeats.has(seatId) || unavailableSeats.has(seatId) || seat?.status === 'damaged') return;
+
     const newSelected = new Set(selectedSeats);
 
     if (newSelected.has(seatId)) {
@@ -179,30 +185,33 @@ const SeatSelection = () => {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="overflow-x-auto pb-4">
             <div className="min-w-[700px] max-w-4xl mx-auto">
               {seatRows.map((row) => (
-                <div key={row.name} className="flex items-center gap-3 mb-1.5">
+                <div key={row.name} className={`flex items-center gap-3 ${row.name === 'H' ? 'mb-12' : 'mb-1.5'}`}>
                   <span className="w-6 text-xs text-white/50 font-medium text-right">{row.name}</span>
                   <div className="flex-1 flex justify-center gap-1">
                     {row.seats.map((seat) => {
                       const status = getSeatStatus(seat.id);
-                      const showAisle = hasCenterAisle(row.name) && seat.number === 17;
+                      const gapPos = getGapPosition(row.name);
+                      const showAisle = hasCenterAisle(row.name) && seat.number === gapPos;
 
                       return (
                         <div key={seat.id} className="flex items-center">
                           <button
                             onClick={() => handleSeatClick(seat.id)}
-                            disabled={status === 'booked' || status === 'unavailable'}
+                            disabled={status === 'booked' || status === 'unavailable' || status === 'damaged'}
                             className={`w-6 h-6 rounded text-[9px] font-medium transition-all duration-200 ${status === 'selected'
                               ? 'bg-accent text-white scale-110 shadow-lg ring-2 ring-accent/50'
                               : status === 'booked'
                                 ? 'bg-white/20 text-white/30 cursor-not-allowed'
                                 : status === 'unavailable'
-                                  ? 'bg-destructive text-white cursor-not-allowed opacity-80'
-                                  : 'bg-success hover:bg-success/80 text-white cursor-pointer hover:scale-105'
+                                  ? 'bg-destructive/50 text-white/50 cursor-not-allowed'
+                                  : status === 'damaged'
+                                    ? 'bg-destructive text-white cursor-not-allowed opacity-100 ring-1 ring-destructive/50'
+                                    : 'bg-success hover:bg-success/80 text-white cursor-pointer hover:scale-105'
                               }`}
                           >
                             {seat.number}
                           </button>
-                          {showAisle && <div className="w-6" />}
+                          {showAisle && <div className={getGapClass(row.name)} />}
                         </div>
                       );
                     })}
@@ -214,10 +223,11 @@ const SeatSelection = () => {
           </motion.div>
 
           {/* Legend */}
-          <div className="flex justify-center gap-8 my-8 text-sm text-white/70">
+          <div className="flex justify-center gap-6 my-8 text-sm text-white/70 flex-wrap">
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-success" /><span>Available</span></div>
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-white/20" /><span>Booked</span></div>
-            <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-destructive" /><span>Unavailable</span></div>
+            <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-destructive/50" /><span>Unavailable</span></div>
+            <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-destructive" /><span>Damaged</span></div>
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-accent" /><span>Selected</span></div>
           </div>
 

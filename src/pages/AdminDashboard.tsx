@@ -12,10 +12,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import srcLogo from "@/assets/src-logo.jpg";
 import { apiClient, authHelper } from "@/lib/apiClient";
-import { TOTAL_SEATS, generateSeatLayout } from "@/data/seatLayout";
+import { TOTAL_SEATS, generateSeatLayout, getGapPosition, getGapClass } from "@/data/seatLayout";
 import { Movie, Show } from "@/lib/types";
 
-type AdminView = "dashboard" | "movies" | "shows" | "damage";
+type AdminView = "dashboard" | "movies" | "shows" | "layout";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -32,8 +32,10 @@ const AdminDashboard = () => {
   const [showForm, setShowForm] = useState({ movieId: "", date: "", time: "", category: "boys" as "boys" | "girls" | "all" });
 
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
-  const [seatRows, setSeatRows] = useState<any[]>([]); // Using real seat data
-  const [loadingSeats, setLoadingSeats] = useState(false);
+  // Global Seat Management State
+  const [globalSeats, setGlobalSeats] = useState<any[]>([]);
+  const [loadingGlobalSeats, setLoadingGlobalSeats] = useState(false);
+  const [seatToToggle, setSeatToToggle] = useState<{ label: string, currentDamaged: boolean } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -55,24 +57,24 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (selectedShow) {
-      loadSeats(selectedShow.id);
-    } else {
-      setSeatRows([]);
+    if (activeView === 'layout') {
+      loadGlobalSeats();
     }
-  }, [selectedShow]);
+  }, [activeView]);
 
-  const loadSeats = async (showId: string) => {
-    setLoadingSeats(true);
+  const loadGlobalSeats = async () => {
+    setLoadingGlobalSeats(true);
     try {
-      const data = await apiClient.getSeats(showId);
-      setSeatRows(data);
+      const data = await apiClient.getGlobalSeats(authHelper.getToken()!);
+      setGlobalSeats(data);
     } catch (err) {
-      toast({ title: "Error", description: "Failed to load seats", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to load global seat data", variant: "destructive" });
     } finally {
-      setLoadingSeats(false);
+      setLoadingGlobalSeats(false);
     }
   };
+
+
 
   const totalBookedSeats = shows.reduce((acc, show) => acc + (show.bookedSeats || 0), 0);
 
@@ -167,30 +169,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const toggleSeatStatus = async (seat: any) => {
-    if (!selectedShow) return;
-    const token = authHelper.getToken();
-    if (!token) return;
-
-    const newStatus = seat.status === 'unavailable' ? 'available' : 'unavailable';
-    const label = seat.id;
+  const confirmToggleDamage = async () => {
+    if (!seatToToggle) return;
+    const { label, currentDamaged } = seatToToggle;
+    const newDamagedStatus = !currentDamaged;
 
     try {
-      // Optimistic update
-      const updatedRows = seatRows.map(row => ({
-        ...row,
-        seats: row.seats.map((s: any) => s.id === label ? { ...s, status: newStatus } : s)
-      }));
-      setSeatRows(updatedRows);
-
-      await apiClient.updateSeatStatus(token, selectedShow.id, label, newStatus);
+      await apiClient.toggleGlobalSeatDamage(authHelper.getToken()!, label, newDamagedStatus);
       toast({
-        title: newStatus === 'unavailable' ? "Seat Marked Damaged" : "Seat Marked Available",
-        description: `Seat ${label} is now ${newStatus}`
+        title: "Success",
+        description: `Seat ${label} marked as ${newDamagedStatus ? 'Damaged' : 'Repaired'}`,
       });
+      // Refresh global list
+      loadGlobalSeats();
+      setSeatToToggle(null);
     } catch (err) {
       toast({ title: "Error", description: "Failed to update seat status", variant: "destructive" });
-      loadSeats(selectedShow.id); // Revert
     }
   };
 
@@ -225,8 +219,11 @@ const AdminDashboard = () => {
     { id: "dashboard" as AdminView, label: "Overview", icon: Armchair },
     { id: "movies" as AdminView, label: "Manage Movies", icon: Film },
     { id: "shows" as AdminView, label: "Manage Shows", icon: Calendar },
-    { id: "damage" as AdminView, label: "Damage Tracking", icon: AlertTriangle },
+    { id: "layout" as AdminView, label: "Auditorium Layout", icon: AlertTriangle },
   ];
+
+  // Generate static layout for Admin View
+  const staticLayout = generateSeatLayout();
 
   return (
     <div className="min-h-screen bg-hero-gradient">
@@ -314,7 +311,7 @@ const AdminDashboard = () => {
                         <Button variant="outline" size="sm" onClick={() => handleDownloadReport(show.id)} title="Download Report">
                           <Download className="w-4 h-4" />
                         </Button>
-                        <Button variant="secondary" size="sm" onClick={() => { setSelectedShow(show); setActiveView("damage"); }}><Eye className="w-4 h-4" /></Button>
+                        <Button variant="secondary" size="sm" onClick={() => { setSelectedShow(show); setActiveView("layout"); }}><Eye className="w-4 h-4" /></Button>
                         <Button variant="destructive" size="sm" onClick={() => handleDeleteShow(show.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </CardContent></Card>
@@ -324,52 +321,93 @@ const AdminDashboard = () => {
             </motion.div>
           )}
 
-          {activeView === "damage" && (
-            <motion.div key="damage" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h1 className="font-display text-2xl font-bold mb-6">Damage Tracking / Seat Management</h1>
-              <Card className="glass mb-6">
-                <CardContent className="p-4">
-                  <Label>Select Show</Label>
-                  <select value={selectedShow?.id || ""} onChange={(e) => setSelectedShow(shows.find(s => s.id === e.target.value) || null)} className="w-full h-10 px-3 bg-secondary/50 border border-border rounded-lg mt-2">
-                    <option value="">Choose</option>
-                    {shows.map(s => {
-                      const m = typeof s.movieId === 'object' ? s.movieId as Movie : movies.find(x => x.id === s.movieId);
-                      return <option key={s.id} value={s.id}>{m?.title || 'Event'} - {s.date}</option>;
-                    })}
-                  </select>
-                </CardContent>
-              </Card>
-              {selectedShow && (
-                <Card className="glass"><CardHeader><CardTitle>Manage Seats: Red (Damaged) / Green (Available) / White (Booked)</CardTitle></CardHeader><CardContent className="overflow-x-auto">
-                  {loadingSeats ? <div className="p-8 text-center">Loading seats...</div> : (
-                    <div className="min-w-[700px]">
-                      <div className="text-center mb-6"><div className="h-2 bg-gradient-primary rounded-full mx-auto w-3/4 mb-1" /><span className="text-xs text-muted-foreground">SCREEN</span></div>
-                      <div className="space-y-1">
-                        {seatRows.map((row) => (
-                          <div key={row.name} className="flex items-center gap-1 justify-center">
-                            <span className="w-5 text-xs text-muted-foreground">{row.name}</span>
-                            <div className="flex gap-0.5">{row.seats.map((seat: any) => {
-                              const isDamaged = seat.status === 'unavailable';
-                              const isBooked = seat.status === 'booked';
-                              return <button
-                                key={seat.id}
-                                onClick={() => toggleSeatStatus(seat)}
-                                className={`w-5 h-5 rounded text-[8px] transition-all hover:scale-110 
-                                    ${isDamaged ? "bg-destructive text-white" :
-                                    isBooked ? "bg-white/20 text-white/50" :
-                                      "bg-success/70 hover:bg-success text-white"}`}
-                                title={`${seat.id} - ${seat.status}`}
-                              >
-                                {seat.number}
-                              </button>;
-                            })}</div>
-                          </div>
-                        ))}
+          {activeView === "layout" && (
+            <motion.div key="layout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <h1 className="font-display text-2xl font-bold mb-6">Manage Auditorium Layout (Global)</h1>
+              <p className="text-muted-foreground mb-4">
+                Mark seats as "Damaged" to make them unavailable for ALL current and future movies.
+                <br />
+                <span className="text-xs">Click a seat to toggle its status.</span>
+              </p>
+
+              <Card className="glass">
+                <CardHeader>
+                  <CardTitle>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-success/70" /> Available</div>
+                      <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-destructive" /> Damaged</div>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  {loadingGlobalSeats ? <div className="p-8 text-center">Loading global layout...</div> : (
+                    <div className="min-w-[700px] flex justify-center">
+                      <div className="inline-block">
+                        <div className="text-center mb-6"><div className="h-2 bg-gradient-primary rounded-full mx-auto w-3/4 mb-1" /><span className="text-xs text-muted-foreground">SCREEN</span></div>
+                        <div className="space-y-1">
+                          {staticLayout.map((row) => (
+                            <div key={row.name} className={`flex items-center gap-1 justify-center ${row.name === 'H' ? 'mb-8' : ''}`}>
+                              <span className="w-5 text-xs text-muted-foreground text-right mr-2">{row.name}</span>
+                              <div className="flex gap-0.5">
+                                {row.seats.map((seat) => {
+                                  // Check functionality
+                                  const globalStatus = globalSeats.find(s => s.seatLabel === seat.id);
+                                  const isDamaged = globalStatus?.isDamaged || false;
+                                  const gapPos = getGapPosition(row.name);
+
+                                  return (
+                                    <div key={seat.id} className="flex gap-0.5">
+                                      <button
+                                        onClick={() => setSeatToToggle({ label: seat.id, currentDamaged: isDamaged })}
+                                        className={`w-6 h-6 rounded text-[9px] transition-all hover:scale-110 
+                                                ${isDamaged ? "bg-destructive text-white ring-2 ring-destructive/50" : "bg-success/70 hover:bg-success text-white"}`}
+                                        title={`${seat.id} - ${isDamaged ? "Damaged" : "Good Condtion"}`}
+                                      >
+                                        {seat.number}
+                                      </button>
+                                      {seat.number === gapPos && <div className={getGapClass(row.name)} />}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <span className="w-5 text-xs text-muted-foreground ml-2">{row.name}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
-                </CardContent></Card>
+                </CardContent>
+              </Card>
+
+              {/* Confirmation Dialog (Simple Modal Implementation) */}
+              {seatToToggle && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-card border border-border p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4"
+                  >
+                    <h3 className="font-display text-lg font-semibold mb-2">Confirm Action</h3>
+                    <p className="text-muted-foreground mb-6">
+                      {seatToToggle.currentDamaged
+                        ? `Would you like to mark seat ${seatToToggle.label} as REPAIRED (Available)?`
+                        : `Would you like to convert seat ${seatToToggle.label} into the DAMAGED one? This will affect all shows.`
+                      }
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                      <Button variant="outline" onClick={() => setSeatToToggle(null)}>Cancel</Button>
+                      <Button
+                        variant={seatToToggle.currentDamaged ? "default" : "destructive"}
+                        onClick={confirmToggleDamage}
+                      >
+                        Yes, {seatToToggle.currentDamaged ? "Repair" : "Mark Damaged"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                </div>
               )}
+
             </motion.div>
           )}
         </AnimatePresence>

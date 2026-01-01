@@ -22,7 +22,7 @@ export interface SeatItem {
   id: string;
   row: string;
   number: number;
-  status: 'available' | 'booked' | 'unavailable';
+  status: 'available' | 'booked' | 'unavailable' | 'damaged';
   bookedBy?: string;
 }
 

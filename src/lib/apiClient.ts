@@ -147,6 +147,24 @@ export const apiClient = {
     return res.json();
   },
 
+  getGlobalSeats: async (token: string) => {
+    const res = await fetch(`${API_BASE}/admin/seats/global`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to fetch global seats');
+    return res.json();
+  },
+
+  toggleGlobalSeatDamage: async (token: string, label: string, isDamaged: boolean) => {
+    const res = await fetch(`${API_BASE}/admin/seats/global/${label}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ isDamaged }),
+    });
+    if (!res.ok) throw new Error('Failed to update global seat status');
+    return res.json();
+  },
+
   verifyReport: async (token: string, showId: string) => {
     const res = await fetch(`${API_BASE}/admin/shows/${showId}/verify-report`, {
       headers: { Authorization: `Bearer ${token}` },
