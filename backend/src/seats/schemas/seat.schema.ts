@@ -9,12 +9,15 @@ export class Seat {
   showId: Types.ObjectId;
 
   @Prop({ required: true })
+  seatLabel: string;
+
+  @Prop({ required: true })
   row: string;
 
   @Prop({ required: true })
   number: number;
 
-  @Prop({ required: true, enum: ['available', 'booked'], default: 'available' })
+  @Prop({ required: true, enum: ['available', 'booked', 'unavailable'], default: 'available' })
   status: string;
 
   @Prop()

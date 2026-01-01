@@ -17,6 +17,15 @@ export class User {
   @Prop()
   name: string;
 
+  @Prop({ enum: ['male', 'female'] })
+  gender: string;
+
+  @Prop({ default: false })
+  isVerified: boolean;
+
+  @Prop()
+  verificationToken: string;
+
   @Prop()
   createdAt: Date;
 }

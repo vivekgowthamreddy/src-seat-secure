@@ -9,71 +9,71 @@
     /* Dark Premium Theme - Matching Reference */
     --background: 240 10% 6%;
     --foreground: 0 0% 98%;
-    
+
     --card: 240 10% 10%;
     --card-foreground: 0 0% 98%;
-    
+
     --popover: 240 10% 10%;
     --popover-foreground: 0 0% 98%;
-    
-    /* Primary: Gradient Accent */
-    --primary: 280 80% 60%;
+
+    /* Primary: Deep Sky Blue (#00BFFF) */
+    --primary: 195 100% 50%;
     --primary-foreground: 0 0% 100%;
-    
+
     /* Secondary */
     --secondary: 240 8% 18%;
     --secondary-foreground: 0 0% 98%;
-    
+
     --muted: 240 8% 15%;
     --muted-foreground: 240 5% 55%;
-    
-    /* Accent: Cyan */
-    --accent: 190 80% 50%;
+
+    /* Accent: Deep Sky Blue */
+    --accent: 195 100% 50%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Success */
     --success: 150 60% 45%;
     --success-foreground: 0 0% 100%;
-    
+
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 240 8% 18%;
     --input: 240 8% 18%;
-    --ring: 280 80% 60%;
-    
+    --ring: 195 100% 50%;
+
     --radius: 0.75rem;
-    
+
     /* Seat States */
     --seat-available: 150 60% 45%;
     --seat-booked: 240 8% 35%;
-    --seat-selected: 280 80% 60%;
+    --seat-selected: 195 100% 50%;
     --seat-unavailable: 240 8% 25%;
     --seat-damaged: 0 70% 50%;
-    
+
     /* Premium Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280 80% 60%) 0%, hsl(190 80% 50%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(195 100% 50%) 0%, hsl(210 100% 60%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(240 10% 4%) 0%, hsl(260 15% 8%) 50%, hsl(240 10% 6%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(240 10% 12%) 0%, hsl(240 10% 8%) 100%);
-    --gradient-glow: radial-gradient(ellipse at center, hsl(280 80% 60% / 0.15) 0%, transparent 70%);
-    
+    --gradient-glow: radial-gradient(ellipse at center, hsl(195 100% 50% / 0.15) 0%, transparent 70%);
+
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.2);
     --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 12px 32px -4px hsl(0 0% 0% / 0.4);
     --shadow-xl: 0 24px 48px -8px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 40px hsl(280 80% 60% / 0.3);
-    --shadow-glow-cyan: 0 0 40px hsl(190 80% 50% / 0.3);
-    
+    --shadow-glow: 0 0 40px hsl(195 100% 50% / 0.3);
+    --shadow-glow-cyan: 0 0 40px hsl(195 100% 50% / 0.3);
+
     /* Sidebar */
     --sidebar-background: 240 10% 8%;
     --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 280 80% 60%;
+    --sidebar-primary: 195 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 10% 14%;
     --sidebar-accent-foreground: 0 0% 92%;
     --sidebar-border: 240 8% 16%;
-    --sidebar-ring: 280 80% 60%;
+    --sidebar-ring: 195 100% 50%;
   }
 }
 
@@ -86,8 +86,13 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display font-semibold tracking-tight;
   }
 }
@@ -97,35 +102,35 @@
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);
   }
-  
+
   .bg-gradient-primary {
     background: var(--gradient-primary);
   }
-  
+
   .bg-hero-gradient {
     background: var(--gradient-hero);
   }
-  
+
   .bg-card-gradient {
     background: var(--gradient-card);
   }
-  
+
   .bg-glow {
     background: var(--gradient-glow);
   }
-  
+
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
-  
+
   .shadow-glow-cyan {
     box-shadow: var(--shadow-glow-cyan);
   }
-  
+
   .glass {
     @apply bg-card/60 backdrop-blur-xl border border-border/50;
   }
-  
+
   .glass-hover {
     @apply transition-all duration-300 hover:bg-card/80 hover:border-border;
   }
@@ -133,60 +138,83 @@
 
 /* Premium Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(24px);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes slideDown {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(-16px);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes scaleIn {
-  from { 
+  from {
     opacity: 0;
     transform: scale(0.96);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: scale(1);
   }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px hsl(280 80% 60% / 0.2);
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px hsl(195 100% 50% / 0.2);
   }
-  50% { 
-    box-shadow: 0 0 40px hsl(280 80% 60% / 0.4);
+
+  50% {
+    box-shadow: 0 0 40px hsl(195 100% 50% / 0.4);
   }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .animate-fade-in {
@@ -206,7 +234,7 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, hsl(280 80% 60% / 0.1), transparent);
+  background: linear-gradient(90deg, transparent, hsl(195 100% 50% / 0.1), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -220,11 +248,25 @@
 }
 
 /* Stagger animation delays */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+
+.stagger-5 {
+  animation-delay: 0.5s;
+}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
@@ -253,6 +295,8 @@
 }
 
 /* Input focus glow */
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
 }

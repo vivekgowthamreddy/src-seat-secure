@@ -10,4 +10,7 @@ export class RegisterDto {
 
   @IsString()
   name: string;
+
+  @IsString()
+  gender: 'male' | 'female';
 }

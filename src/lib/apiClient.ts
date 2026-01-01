@@ -3,11 +3,11 @@ const API_BASE = 'http://localhost:4000';
 
 export const apiClient = {
   // Auth
-  register: async (email: string, password: string, name: string) => {
+  register: async (email: string, password: string, name: string, gender: string) => {
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, gender }),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -85,6 +85,82 @@ export const apiClient = {
     });
     if (!res.ok) throw new Error('Failed to fetch booking');
     return res.json();
+  },
+
+  // Admin - Movies
+  createMovie: async (token: string, movie: any) => {
+    const res = await fetch(`${API_BASE}/admin/movies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(movie),
+    });
+    if (!res.ok) throw new Error('Failed to create movie');
+    return res.json();
+  },
+
+  updateMovie: async (token: string, id: string, movie: any) => {
+    const res = await fetch(`${API_BASE}/admin/movies/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(movie),
+    });
+    if (!res.ok) throw new Error('Failed to update movie');
+    return res.json();
+  },
+
+  deleteMovie: async (token: string, id: string) => {
+    const res = await fetch(`${API_BASE}/admin/movies/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to delete movie');
+    return res.json();
+  },
+
+  // Admin - Shows
+  createShow: async (token: string, show: any) => {
+    const res = await fetch(`${API_BASE}/admin/shows`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(show),
+    });
+    if (!res.ok) throw new Error('Failed to create show');
+    return res.json();
+  },
+
+  deleteShow: async (token: string, id: string) => {
+    const res = await fetch(`${API_BASE}/admin/shows/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to delete show');
+    return res.json();
+  },
+
+  updateSeatStatus: async (token: string, showId: string, label: string, status: string) => {
+    const res = await fetch(`${API_BASE}/admin/shows/${showId}/seats/${label}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Failed to update seat status');
+    return res.json();
+  },
+
+  verifyReport: async (token: string, showId: string) => {
+    const res = await fetch(`${API_BASE}/admin/shows/${showId}/verify-report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to verify report');
+    return res.json();
+  },
+
+  downloadReport: async (token: string, showId: string) => {
+    const res = await fetch(`${API_BASE}/admin/shows/${showId}/download-report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to download report');
+    return res.blob();
   },
 };
 

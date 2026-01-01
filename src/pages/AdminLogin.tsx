@@ -1,36 +1,53 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Shield, Lock, KeyRound } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import srcLogo from "@/assets/src-logo.jpg";
+import { apiClient, authHelper } from "@/lib/apiClient";
 
 const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const response = await apiClient.login(formData.email, formData.password);
+
+      if (response.user.role !== 'admin') {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      authHelper.setToken(response.accessToken);
+      authHelper.setUser(response.user);
+
       toast({
         title: "Admin Login Successful",
         description: "Welcome to the admin dashboard.",
       });
       navigate("/admin/dashboard");
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col">
+    <div className="min-h-screen bg-neutral-950 flex flex-col">
       {/* Header */}
       <header className="border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 h-16 flex items-center">
@@ -71,32 +88,36 @@ const AdminLogin = () => {
                 Enter your admin credentials to continue
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="admin-id">Admin ID</Label>
+                  <Label htmlFor="admin-email">Admin Email</Label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      id="admin-id" 
-                      type="text" 
-                      placeholder="Enter admin ID"
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="admin@college.edu"
                       className="pl-10"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="admin-password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      id="admin-password" 
-                      type="password" 
+                    <Input
+                      id="admin-password"
+                      type="password"
                       placeholder="Enter password"
                       className="pl-10"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       required
                     />
                   </div>

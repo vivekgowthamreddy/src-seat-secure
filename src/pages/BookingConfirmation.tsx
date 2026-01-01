@@ -1,19 +1,59 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, Calendar, Clock, Armchair, Film, QrCode, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import srcLogo from "@/assets/src-logo.jpg";
-import { getShowById, getMovieById } from "@/data/mockData";
+import { apiClient, authHelper } from "@/lib/apiClient";
+
+import { User, Booking, Show, Movie } from "@/lib/types";
 
 const BookingConfirmation = () => {
   const { showId, seatId } = useParams();
-  const show = getShowById(showId || "");
-  const movie = show ? getMovieById(show.movieId) : null;
+  const [show, setShow] = useState<Show | null>(null);
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const bookingId = `SRC${Date.now().toString().slice(-8)}`;
 
-  if (!show || !movie) {
-    return <div className="min-h-screen flex items-center justify-center"><p>Booking not found</p></div>;
+  useEffect(() => {
+    const loadData = async () => {
+      if (!showId) {
+        setError("Invalid Booking");
+        setLoading(false);
+        return;
+      }
+      try {
+        const token = authHelper.getToken();
+
+        const showData = await apiClient.getShow(showId);
+        setShow(showData);
+
+        if (showData && typeof showData.movieId === 'object') {
+          setMovie(showData.movieId as Movie);
+        } else if (showData && typeof showData.movieId === 'string') {
+          // Fallback if somehow not populated (shouldn't happen with updated backend)
+          const movieData = await apiClient.getMovie(showData.movieId);
+          setMovie(movieData);
+        }
+      } catch (err) {
+        setError("Failed to load booking details");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [showId]);
+
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><p>Loading ticket...</p></div>;
+  }
+
+  if (error || !show || !movie) {
+    return <div className="min-h-screen flex items-center justify-center"><p>{error || "Booking not found"}</p></div>;
   }
 
   return (
@@ -62,7 +102,7 @@ const BookingConfirmation = () => {
                 <Armchair className="w-5 h-5 text-muted-foreground" />
                 <div><p className="text-xs text-muted-foreground">Category</p><p className="font-semibold text-foreground capitalize">{show.category} Show</p></div>
               </div>
-              
+
               <div className="border-t border-dashed pt-4 mt-4">
                 <div className="flex items-center justify-between">
                   <div><p className="text-xs text-muted-foreground">Booking ID</p><p className="font-mono text-sm font-semibold text-foreground">{bookingId}</p></div>

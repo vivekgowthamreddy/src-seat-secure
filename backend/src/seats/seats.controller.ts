@@ -5,12 +5,27 @@ type SeatOut = { id: string; row: string; number: number; status: string; booked
 
 @Controller('shows')
 export class SeatsController {
-  constructor(private readonly seatsService: SeatsService) {}
+  constructor(private readonly seatsService: SeatsService) { }
 
   @Get(':id/seats')
   async seats(@Param('id') id: string) {
-    const seats = await this.seatsService.findByShow(id);
-    if (!seats) throw new NotFoundException('Seats not found for show');
+    let seats = await this.seatsService.findByShow(id);
+
+    if (!seats || seats.length === 0) {
+      await this.seatsService.generateSeats(id);
+      seats = await this.seatsService.findByShow(id);
+    }
+
+    // Self-healing: if existing seats are missing the 'seatLabel' field (from old schema), regenerate them
+    const hasMissingId = seats && seats.some((s: any) => !s.seatLabel);
+    if (hasMissingId) {
+      console.log(`[SeatsController] Found seats without ID for show ${id}. Regenerating...`);
+      await this.seatsService.deleteByShow(id);
+      await this.seatsService.generateSeats(id);
+      seats = await this.seatsService.findByShow(id);
+    }
+
+    if (!seats) throw new NotFoundException('Seats not found and could not be generated');
 
     // Convert to rows similar to frontend shape
     const rowsMap: Record<string, SeatOut[]> = {};
@@ -20,7 +35,7 @@ export class SeatsController {
       rowsMap[s.row].push(out);
     });
 
-    const rows = Object.keys(rowsMap).sort().map(name => ({ name, seats: rowsMap[name].sort((a,b)=>a.number-b.number) }));
+    const rows = Object.keys(rowsMap).sort().map(name => ({ name, seats: rowsMap[name].sort((a, b) => a.number - b.number) }));
     return rows;
   }
 }

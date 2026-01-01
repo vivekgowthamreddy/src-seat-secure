@@ -1,28 +1,79 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Film, Calendar, Clock, Users, Armchair, LogOut, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import srcLogo from "@/assets/src-logo.jpg";
-import { movies, shows, getMovieById } from "@/data/mockData";
+import { apiClient, authHelper } from "@/lib/apiClient";
+import { useToast } from "@/hooks/use-toast";
+import { User, Booking, Show, Movie } from "@/lib/types";
 
 const StudentDashboard = () => {
-  const studentName = "Rahul Kumar";
-  const studentId = "N210456";
-  
-  // Mock: student has already booked a seat
-  const currentBooking = {
-    movieTitle: "Kalki 2898 AD",
-    seatNumber: "G15",
-    showTime: "6:00 PM",
-    showDate: "Dec 21, 2024",
-    category: "Boys"
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [upcomingShows, setUpcomingShows] = useState<Show[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check auth
+    if (!authHelper.isAuthenticated()) {
+      navigate('/student/login');
+      return;
+    }
+
+    const userData = authHelper.getUser();
+    if (userData) {
+      setUser(userData);
+    } else {
+      navigate('/student/login');
+      return;
+    }
+
+    const loadDashboardData = async () => {
+      try {
+        const token = authHelper.getToken();
+        if (!token) return;
+
+        // Fetch User Bookings
+        const userBookings = await apiClient.getBookings(token);
+        // Sort bookings by date descending (newest first)
+        userBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setBookings(userBookings);
+
+        // Fetch Upcoming Shows
+        const allShows = await apiClient.getShows();
+        // Filter out past shows? For now just take 3.
+        setUpcomingShows(allShows.slice(0, 3));
+
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data. Please refresh.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [navigate, toast]);
+
+  const handleLogout = () => {
+    authHelper.logout();
+    navigate("/");
   };
 
-  const upcomingShows = shows.slice(0, 3).map(show => ({
-    ...show,
-    movie: getMovieById(show.movieId)
-  }));
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading dashboard...</div>;
+  }
+
+  // Get the most recent booking for the "Current Booking" card
+  const currentBooking = bookings.length > 0 ? bookings[0] : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,16 +89,14 @@ const StudentDashboard = () => {
               <span className="text-muted-foreground text-sm ml-2">Student Portal</span>
             </div>
           </Link>
-          
+
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-foreground">{studentName}</p>
-              <p className="text-xs text-muted-foreground">{studentId}</p>
+              <p className="text-sm font-medium text-foreground">{user?.name}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
-            <Button variant="ghost" size="icon" asChild className="hover:bg-muted">
-              <Link to="/">
-                <LogOut className="w-5 h-5" />
-              </Link>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="hover:bg-muted">
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -62,7 +111,7 @@ const StudentDashboard = () => {
           className="mb-8"
         >
           <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-2 tracking-tight">
-            Welcome, {studentName.split(' ')[0]}
+            Welcome, {user?.name.split(' ')[0]}
           </h1>
           <p className="text-muted-foreground text-lg">
             One student • One seat • One show
@@ -70,7 +119,7 @@ const StudentDashboard = () => {
         </motion.div>
 
         {/* Current Booking Card */}
-        {currentBooking && (
+        {currentBooking ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,34 +134,59 @@ const StudentDashboard = () => {
                   Your Allocated Seat
                 </div>
                 <CardTitle className="text-6xl md:text-7xl font-display font-semibold tracking-tight">
-                  {currentBooking.seatNumber}
+                  {currentBooking.seats.join(', ')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="relative pb-6">
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-white/70 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Film className="w-4 h-4" />
-                    {currentBooking.movieTitle}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {currentBooking.showDate}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {currentBooking.showTime}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    {currentBooking.category} Show
-                  </div>
+                  {/* Depending on if showId is populated or just ID. Assuming populated for now or we need to handle it */}
+                  {typeof currentBooking.showId === 'object' && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Film className="w-4 h-4" />
+                        {typeof (currentBooking.showId as Show).movieId === 'object'
+                          ? ((currentBooking.showId as Show).movieId as Movie).title
+                          : "Movie"}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {new Date((currentBooking.showId as Show).date).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        {(currentBooking.showId as Show).time}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        <span className="capitalize">{(currentBooking.showId as Show).category} Show</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                
+
                 <div className="mt-6 p-4 bg-white/10 rounded-xl backdrop-blur-sm">
                   <p className="text-sm text-white/90">
                     <strong>Important:</strong> You are responsible for this seat. Any damage will be traced to you.
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="mb-8"
+          >
+            <Card className="bg-card text-foreground border-dashed border-2 shadow-sm">
+              <CardContent className="flex flex-col items-center justify-center py-10">
+                <Armchair className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-xl font-semibold mb-2">No Active Bookings</p>
+                <p className="text-muted-foreground mb-4">You haven't booked any seats yet.</p>
+                <Button asChild>
+                  <Link to="/student/movies">Book a Seat Now</Link>
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -126,8 +200,8 @@ const StudentDashboard = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
         >
           {[
-            { label: "Total Bookings", value: "3", icon: Film },
-            { label: "Upcoming Shows", value: "1", icon: Calendar },
+            { label: "Total Bookings", value: bookings.length.toString(), icon: Film },
+            { label: "Upcoming Shows", value: upcomingShows.length.toString(), icon: Calendar },
             { label: "Seat History", value: "Clean", icon: Armchair },
             { label: "Status", value: "Active", icon: Users },
           ].map((stat, index) => (
@@ -164,50 +238,78 @@ const StudentDashboard = () => {
               </Link>
             </Button>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {upcomingShows.map((show, index) => (
-              <motion.div
-                key={show.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
-              >
-                <Link to={`/student/movie/${show.movieId}`}>
-                  <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer border-border h-full">
-                    <div className="aspect-[16/10] relative overflow-hidden">
-                      <img 
-                        src={show.movie?.poster} 
-                        alt={show.movie?.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <p className="text-white font-display font-semibold text-lg leading-tight">
-                          {show.movie?.title}
-                        </p>
-                        <div className="flex items-center gap-3 text-white/70 text-sm mt-2">
-                          <span>{new Date(show.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
-                          <span className="text-white/40">•</span>
-                          <span>{show.time}</span>
-                          <span className="text-white/40">•</span>
-                          <span className="capitalize">{show.category}</span>
+            {upcomingShows.map((show, index) => {
+              // Check if user has booked this show
+              const userBooking = bookings.find(b => {
+                const showId = typeof b.showId === 'object' ? (b.showId as Show).id : b.showId;
+                return showId === show.id;
+              });
+
+              return (
+                <motion.div
+                  key={show.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
+                >
+                  <div className="h-full relative group">
+                    {/* We can't wrap the whole card in Link if we want different destinations.
+                     So we'll use a div wrapper and handle click or separate links.
+                     Actually, standard simple approach: Conditional Link destination.
+                  */}
+                    <Link to={userBooking
+                      ? `/student/booking-confirmation/${show.id}/${userBooking.seats.join(',')}`
+                      : `/student/movie/${typeof show.movieId === 'object' ? (show.movieId as Movie).id : show.movieId}`
+                    }>
+                      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border h-full">
+                        <div className="aspect-[16/10] relative overflow-hidden">
+                          <img
+                            src={typeof show.movieId === 'object' ? (show.movieId as Movie).poster : ""}
+                            alt={typeof show.movieId === 'object' ? (show.movieId as Movie).title : "Movie"}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <p className="text-white font-display font-semibold text-lg leading-tight">
+                              {typeof show.movieId === 'object' ? (show.movieId as Movie).title : "Movie"}
+                            </p>
+                            <div className="flex items-center gap-3 text-white/70 text-sm mt-2">
+                              <span>{new Date(show.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+                              <span className="text-white/40">•</span>
+                              <span>{show.time}</span>
+                              <span className="text-white/40">•</span>
+                              <span className="capitalize">{show.category}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-0.5">Available Seats</p>
-                          <p className="font-semibold text-foreground">{show.totalSeats - show.bookedSeats} / {show.totalSeats}</p>
-                        </div>
-                        <Button size="sm" className="rounded-full">Book Now</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-0.5">Available Seats</p>
+                              <p className="font-semibold text-foreground">{show.totalSeats - show.bookedSeats} / {show.totalSeats}</p>
+                            </div>
+                            {userBooking ? (
+                              <Button size="sm" variant="outline" className="rounded-full border-accent text-accent hover:bg-accent hover:text-white">
+                                Download Ticket
+                              </Button>
+                            ) : (
+                              <Button size="sm" className="rounded-full">Book Now</Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </div>
+                </motion.div>
+              );
+            })}
+            {upcomingShows.length === 0 && (
+              <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground">No upcoming shows found.</p>
+              </div>
+            )}
           </div>
         </motion.div>
 

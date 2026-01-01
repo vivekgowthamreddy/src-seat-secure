@@ -5,14 +5,14 @@ import { Show, ShowDocument } from './schemas/show.schema';
 
 @Injectable()
 export class ShowsService {
-  constructor(@InjectModel(Show.name) private showModel: Model<ShowDocument>) {}
+  constructor(@InjectModel(Show.name) private showModel: Model<ShowDocument>) { }
 
   async findAll(filter: Partial<Show> = {}): Promise<Show[]> {
-    return this.showModel.find(filter as any).lean();
+    return this.showModel.find(filter as any).populate('movieId').lean();
   }
 
   async findById(id: string): Promise<Show> {
-    const s = await this.showModel.findById(id).lean();
+    const s = await this.showModel.findById(id).populate('movieId').lean();
     if (!s) throw new NotFoundException('Show not found');
     return s;
   }

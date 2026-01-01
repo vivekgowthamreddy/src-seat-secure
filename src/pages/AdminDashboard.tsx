@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Film, Users, AlertTriangle, Armchair, LogOut, Plus, 
-  Trash2, Edit2, Save, X, Calendar, Clock, Eye
+import {
+  Film, Users, AlertTriangle, Armchair, LogOut, Plus,
+  Trash2, Edit2, Save, X, Calendar, Clock, Eye, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,52 +11,116 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import srcLogo from "@/assets/src-logo.jpg";
-import { movies as initialMovies, shows as initialShows, Movie, Show } from "@/data/mockData";
+import { apiClient, authHelper } from "@/lib/apiClient";
 import { TOTAL_SEATS, generateSeatLayout } from "@/data/seatLayout";
+import { Movie, Show } from "@/lib/types";
 
 type AdminView = "dashboard" | "movies" | "shows" | "damage";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState<AdminView>("dashboard");
-  const [movies, setMovies] = useState<Movie[]>(initialMovies);
-  const [shows, setShows] = useState<Show[]>(initialShows);
-  
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [shows, setShows] = useState<Show[]>([]);
+
   const [showMovieForm, setShowMovieForm] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [movieForm, setMovieForm] = useState({ title: "", poster: "", description: "", duration: "", genre: "" });
-  
+
   const [showShowForm, setShowShowForm] = useState(false);
   const [showForm, setShowForm] = useState({ movieId: "", date: "", time: "", category: "boys" as "boys" | "girls" | "all" });
-  
+
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
-  const [damagedSeats, setDamagedSeats] = useState<Set<string>>(new Set(["G-15", "J-22"]));
+  const [seatRows, setSeatRows] = useState<any[]>([]); // Using real seat data
+  const [loadingSeats, setLoadingSeats] = useState(false);
 
-  const totalBookedSeats = shows.reduce((acc, show) => acc + show.bookedSeats, 0);
+  const fetchData = async () => {
+    try {
+      const [m, s] = await Promise.all([apiClient.getMovies(), apiClient.getShows()]);
+      setMovies(m);
+      setShows(s);
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
+    }
+  };
 
-  const handleSaveMovie = () => {
+  useEffect(() => {
+    if (!authHelper.isAuthenticated()) {
+      navigate('/admin/login');
+      return;
+    }
+    fetchData();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (selectedShow) {
+      loadSeats(selectedShow.id);
+    } else {
+      setSeatRows([]);
+    }
+  }, [selectedShow]);
+
+  const loadSeats = async (showId: string) => {
+    setLoadingSeats(true);
+    try {
+      const data = await apiClient.getSeats(showId);
+      setSeatRows(data);
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to load seats", variant: "destructive" });
+    } finally {
+      setLoadingSeats(false);
+    }
+  };
+
+  const totalBookedSeats = shows.reduce((acc, show) => acc + (show.bookedSeats || 0), 0);
+
+  const handleSaveMovie = async () => {
     if (!movieForm.title || !movieForm.poster) {
       toast({ title: "Error", description: "Title and poster URL are required", variant: "destructive" });
       return;
     }
-    if (editingMovie) {
-      setMovies(movies.map(m => m.id === editingMovie.id ? { ...m, ...movieForm, language: "Telugu" } : m));
-      toast({ title: "Success", description: `"${movieForm.title}" updated` });
-    } else {
-      const newMovie: Movie = { id: `movie-${Date.now()}`, ...movieForm, duration: movieForm.duration || "2h 30m", genre: movieForm.genre || "Drama", language: "Telugu" };
-      setMovies([...movies, newMovie]);
-      toast({ title: "Success", description: `"${movieForm.title}" added` });
+    const token = authHelper.getToken();
+    if (!token) return;
+
+    try {
+      const payload = {
+        title: movieForm.title,
+        posterUrl: movieForm.poster,
+        description: movieForm.description,
+        duration: movieForm.duration || "2h 30m",
+        genre: movieForm.genre || "Drama",
+        language: "Telugu"
+      };
+
+      if (editingMovie) {
+        await apiClient.updateMovie(token, editingMovie.id, payload);
+        toast({ title: "Success", description: `"${movieForm.title}" updated` });
+      } else {
+        await apiClient.createMovie(token, payload);
+        toast({ title: "Success", description: `"${movieForm.title}" added` });
+      }
+      setMovieForm({ title: "", poster: "", description: "", duration: "", genre: "" });
+      setEditingMovie(null);
+      setShowMovieForm(false);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to save movie", variant: "destructive" });
     }
-    setMovieForm({ title: "", poster: "", description: "", duration: "", genre: "" });
-    setEditingMovie(null);
-    setShowMovieForm(false);
   };
 
-  const handleDeleteMovie = (id: string) => {
-    const movie = movies.find(m => m.id === id);
-    setMovies(movies.filter(m => m.id !== id));
-    setShows(shows.filter(s => s.movieId !== id));
-    toast({ title: "Deleted", description: `"${movie?.title}" removed` });
+  const handleDeleteMovie = async (id: string) => {
+    const token = authHelper.getToken();
+    if (!token) return;
+    try {
+      await apiClient.deleteMovie(token, id);
+      toast({ title: "Deleted", description: "Movie removed" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to delete movie", variant: "destructive" });
+    }
   };
 
   const handleEditMovie = (movie: Movie) => {
@@ -65,36 +129,98 @@ const AdminDashboard = () => {
     setShowMovieForm(true);
   };
 
-  const handleSaveShow = () => {
+  const handleSaveShow = async () => {
     if (!showForm.movieId || !showForm.date || !showForm.time) {
       toast({ title: "Error", description: "All fields are required", variant: "destructive" });
       return;
     }
-    const newShow: Show = { id: `show-${Date.now()}`, movieId: showForm.movieId, date: showForm.date, time: showForm.time, category: showForm.category, bookedSeats: 0, totalSeats: TOTAL_SEATS };
-    setShows([...shows, newShow]);
-    toast({ title: "Success", description: "Show scheduled" });
-    setShowForm({ movieId: "", date: "", time: "", category: "boys" });
-    setShowShowForm(false);
-  };
+    const token = authHelper.getToken();
+    if (!token) return;
 
-  const handleDeleteShow = (id: string) => {
-    setShows(shows.filter(s => s.id !== id));
-    toast({ title: "Deleted", description: "Show removed" });
-  };
-
-  const toggleSeatDamage = (seatId: string) => {
-    const newDamaged = new Set(damagedSeats);
-    if (newDamaged.has(seatId)) {
-      newDamaged.delete(seatId);
-      toast({ title: "Restored", description: `Seat ${seatId} clean` });
-    } else {
-      newDamaged.add(seatId);
-      toast({ title: "Reported", description: `Seat ${seatId} damaged`, variant: "destructive" });
+    try {
+      await apiClient.createShow(token, {
+        movieId: showForm.movieId,
+        startTime: `${showForm.date}T${showForm.time}:00Z`,
+        theaterName: "SAC Auditorium",
+        category: showForm.category,
+        totalSeats: TOTAL_SEATS
+      });
+      toast({ title: "Success", description: "Show scheduled" });
+      setShowForm({ movieId: "", date: "", time: "", category: "boys" });
+      setShowShowForm(false);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to create show", variant: "destructive" });
     }
-    setDamagedSeats(newDamaged);
   };
 
-  const seatLayout = generateSeatLayout();
+  const handleDeleteShow = async (id: string) => {
+    const token = authHelper.getToken();
+    if (!token) return;
+    try {
+      await apiClient.deleteShow(token, id);
+      toast({ title: "Deleted", description: "Show removed" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to delete show", variant: "destructive" });
+    }
+  };
+
+  const toggleSeatStatus = async (seat: any) => {
+    if (!selectedShow) return;
+    const token = authHelper.getToken();
+    if (!token) return;
+
+    const newStatus = seat.status === 'unavailable' ? 'available' : 'unavailable';
+    const label = seat.id;
+
+    try {
+      // Optimistic update
+      const updatedRows = seatRows.map(row => ({
+        ...row,
+        seats: row.seats.map((s: any) => s.id === label ? { ...s, status: newStatus } : s)
+      }));
+      setSeatRows(updatedRows);
+
+      await apiClient.updateSeatStatus(token, selectedShow.id, label, newStatus);
+      toast({
+        title: newStatus === 'unavailable' ? "Seat Marked Damaged" : "Seat Marked Available",
+        description: `Seat ${label} is now ${newStatus}`
+      });
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update seat status", variant: "destructive" });
+      loadSeats(selectedShow.id); // Revert
+    }
+  };
+
+  const handleDownloadReport = async (showId: string) => {
+    const token = authHelper.getToken();
+    if (!token) return;
+
+    try {
+      const verify = await apiClient.verifyReport(token, showId);
+      if (!verify.hasBookings) {
+        toast({ title: "No Bookings", description: "No students have booked this show yet.", variant: "default" });
+        return;
+      }
+
+      const blob = await apiClient.downloadReport(token, showId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bookings-report.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Success", description: "Report downloaded" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to download report", variant: "destructive" });
+    }
+  };
+
   const navItems = [
     { id: "dashboard" as AdminView, label: "Overview", icon: Armchair },
     { id: "movies" as AdminView, label: "Manage Movies", icon: Film },
@@ -130,7 +256,7 @@ const AdminDashboard = () => {
             <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <h1 className="font-display text-2xl font-bold text-foreground mb-6">Welcome, Administrator</h1>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {[{ label: "Total Seats", value: TOTAL_SEATS, icon: Armchair }, { label: "Movies", value: movies.length, icon: Film }, { label: "Bookings", value: totalBookedSeats, icon: Users }, { label: "Damaged", value: damagedSeats.size, icon: AlertTriangle }].map((stat) => (
+                {[{ label: "Total Seats", value: TOTAL_SEATS, icon: Armchair }, { label: "Movies", value: movies.length, icon: Film }, { label: "Bookings", value: totalBookedSeats, icon: Users }].map((stat) => (
                   <Card key={stat.label} className="glass"><CardContent className="p-4 flex items-center gap-3"><stat.icon className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{stat.value}</p><p className="text-xs text-muted-foreground">{stat.label}</p></div></CardContent></Card>
                 ))}
               </div>
@@ -179,40 +305,71 @@ const AdminDashboard = () => {
                 </Card>
               )}
               <div className="space-y-3">
-                {shows.map((show) => { const movie = movies.find(m => m.id === show.movieId); return (
-                  <Card key={show.id} className="glass"><CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">{movie && <img src={movie.poster} alt="" className="w-12 h-18 object-cover rounded" />}<div><h3 className="font-semibold">{movie?.title}</h3><p className="text-sm text-muted-foreground"><Calendar className="w-3 h-3 inline mr-1" />{show.date} <Clock className="w-3 h-3 inline mx-1" />{show.time} <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded text-xs">{show.category}</span></p></div></div>
-                    <div className="flex gap-2"><Button variant="secondary" size="sm" onClick={() => { setSelectedShow(show); setActiveView("damage"); }}><Eye className="w-4 h-4" /></Button><Button variant="destructive" size="sm" onClick={() => handleDeleteShow(show.id)}><Trash2 className="w-4 h-4" /></Button></div>
-                  </CardContent></Card>
-                ); })}
+                {shows.map((show) => {
+                  const movie = typeof show.movieId === 'object' ? show.movieId as Movie : movies.find(m => m.id === show.movieId);
+                  return (
+                    <Card key={show.id} className="glass"><CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">{movie && <img src={movie.poster} alt="" className="w-12 h-18 object-cover rounded" />}<div><h3 className="font-semibold">{movie?.title || 'Unknown Movie'}</h3><p className="text-sm text-muted-foreground"><Calendar className="w-3 h-3 inline mr-1" />{show.date} <Clock className="w-3 h-3 inline mx-1" />{show.time} <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded text-xs">{show.category}</span></p></div></div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleDownloadReport(show.id)} title="Download Report">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => { setSelectedShow(show); setActiveView("damage"); }}><Eye className="w-4 h-4" /></Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteShow(show.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </CardContent></Card>
+                  );
+                })}
               </div>
             </motion.div>
           )}
 
           {activeView === "damage" && (
             <motion.div key="damage" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h1 className="font-display text-2xl font-bold mb-6">Damage Tracking</h1>
-              <Card className="glass mb-6"><CardContent className="p-4"><Label>Select Show</Label><select value={selectedShow?.id || ""} onChange={(e) => setSelectedShow(shows.find(s => s.id === e.target.value) || null)} className="w-full h-10 px-3 bg-secondary/50 border border-border rounded-lg mt-2"><option value="">Choose</option>{shows.map(s => { const m = movies.find(x => x.id === s.movieId); return <option key={s.id} value={s.id}>{m?.title} - {s.date}</option>; })}</select></CardContent></Card>
+              <h1 className="font-display text-2xl font-bold mb-6">Damage Tracking / Seat Management</h1>
+              <Card className="glass mb-6">
+                <CardContent className="p-4">
+                  <Label>Select Show</Label>
+                  <select value={selectedShow?.id || ""} onChange={(e) => setSelectedShow(shows.find(s => s.id === e.target.value) || null)} className="w-full h-10 px-3 bg-secondary/50 border border-border rounded-lg mt-2">
+                    <option value="">Choose</option>
+                    {shows.map(s => {
+                      const m = typeof s.movieId === 'object' ? s.movieId as Movie : movies.find(x => x.id === s.movieId);
+                      return <option key={s.id} value={s.id}>{m?.title || 'Event'} - {s.date}</option>;
+                    })}
+                  </select>
+                </CardContent>
+              </Card>
               {selectedShow && (
-                <Card className="glass"><CardHeader><CardTitle>Click seats to mark Damaged/Clean</CardTitle></CardHeader><CardContent className="overflow-x-auto">
-                  <div className="min-w-[700px]">
-                    <div className="text-center mb-6"><div className="h-2 bg-gradient-primary rounded-full mx-auto w-3/4 mb-1" /><span className="text-xs text-muted-foreground">SCREEN</span></div>
-                    <div className="space-y-1">
-                      {seatLayout.map((row) => (
-                        <div key={row.name} className="flex items-center gap-1 justify-center">
-                          <span className="w-5 text-xs text-muted-foreground">{row.name}</span>
-                          <div className="flex gap-0.5">{row.seats.map((seat) => {
-                            const seatId = `${row.name}-${seat.number}`;
-                            const isDamaged = damagedSeats.has(seatId);
-                            return <button key={seat.id} onClick={() => toggleSeatDamage(seatId)} className={`w-5 h-5 rounded text-[8px] transition-all hover:scale-110 ${isDamaged ? "bg-destructive" : "bg-success/70 hover:bg-success"}`}>{seat.number}</button>;
-                          })}</div>
-                        </div>
-                      ))}
+                <Card className="glass"><CardHeader><CardTitle>Manage Seats: Red (Damaged) / Green (Available) / White (Booked)</CardTitle></CardHeader><CardContent className="overflow-x-auto">
+                  {loadingSeats ? <div className="p-8 text-center">Loading seats...</div> : (
+                    <div className="min-w-[700px]">
+                      <div className="text-center mb-6"><div className="h-2 bg-gradient-primary rounded-full mx-auto w-3/4 mb-1" /><span className="text-xs text-muted-foreground">SCREEN</span></div>
+                      <div className="space-y-1">
+                        {seatRows.map((row) => (
+                          <div key={row.name} className="flex items-center gap-1 justify-center">
+                            <span className="w-5 text-xs text-muted-foreground">{row.name}</span>
+                            <div className="flex gap-0.5">{row.seats.map((seat: any) => {
+                              const isDamaged = seat.status === 'unavailable';
+                              const isBooked = seat.status === 'booked';
+                              return <button
+                                key={seat.id}
+                                onClick={() => toggleSeatStatus(seat)}
+                                className={`w-5 h-5 rounded text-[8px] transition-all hover:scale-110 
+                                    ${isDamaged ? "bg-destructive text-white" :
+                                    isBooked ? "bg-white/20 text-white/50" :
+                                      "bg-success/70 hover:bg-success text-white"}`}
+                                title={`${seat.id} - ${seat.status}`}
+                              >
+                                {seat.number}
+                              </button>;
+                            })}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent></Card>
               )}
-              {damagedSeats.size > 0 && <Card className="glass mt-6"><CardHeader><CardTitle className="text-destructive"><AlertTriangle className="w-4 h-4 inline mr-2" />Damaged ({damagedSeats.size})</CardTitle></CardHeader><CardContent><div className="flex flex-wrap gap-2">{Array.from(damagedSeats).map(s => <span key={s} onClick={() => toggleSeatDamage(s)} className="px-2 py-1 bg-destructive/20 text-destructive rounded cursor-pointer text-sm">{s} ✕</span>)}</div></CardContent></Card>}
             </motion.div>
           )}
         </AnimatePresence>

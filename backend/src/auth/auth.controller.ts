@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -15,5 +15,10 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('verify')
+  async verify(@Body() body: { email: string; otp: string }) {
+    return this.authService.verifyEmail(body.email, body.otp);
   }
 }

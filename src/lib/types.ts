@@ -10,7 +10,7 @@ export interface Movie {
 
 export interface Show {
   id: string;
-  movieId: string;
+  movieId: string | Movie;
   date: string;
   time: string;
   category: 'boys' | 'girls' | 'all';
@@ -22,7 +22,7 @@ export interface SeatItem {
   id: string;
   row: string;
   number: number;
-  status: 'available' | 'booked';
+  status: 'available' | 'booked' | 'unavailable';
   bookedBy?: string;
 }
 
@@ -34,7 +34,7 @@ export interface SeatRow {
 export interface Booking {
   id: string;
   userId: string;
-  showId: string;
+  showId: string | Show;
   seats: string[];
   status: 'pending' | 'confirmed' | 'cancelled';
   amount: number;

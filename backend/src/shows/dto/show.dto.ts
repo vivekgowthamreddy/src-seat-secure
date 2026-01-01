@@ -1,6 +1,6 @@
 export class ShowDto {
   id: string;
-  movieId: string;
+  movieId: string | any;
   date: string;
   time: string;
   category: string;
