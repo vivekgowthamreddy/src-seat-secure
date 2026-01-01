@@ -15,35 +15,36 @@ export class AuthService {
   ) { }
 
   async register(dto: RegisterDto) {
-    if (!dto.email.endsWith('@rguktn.ac.in') && !dto.email.endsWith('@college.edu')) { // college.edu for dev/admin
+    const email = dto.email.toLowerCase();
+    if (!email.endsWith('@rguktn.ac.in') && !email.endsWith('@college.edu')) { // college.edu for dev/admin
       throw new BadRequestException('Use official college email (@rguktn.ac.in)');
     }
 
-    const existing = await this.usersService.findByEmail(dto.email);
+    const existing = await this.usersService.findByEmail(email);
     if (existing) {
       if (!existing.isVerified) {
         // Handle "Unverified Deadlock": Resend OTP
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-        // Use user._id from the existing record (casted to any or checked against interface if available)
+        // Use user._id from the existing record
         await this.usersService.update((existing as any)._id, { verificationToken });
 
-        console.log(`[AUTH] Resending OTP for ${dto.email}: ${verificationToken}`);
+        console.log(`[AUTH] Resending OTP for ${email}: ${verificationToken}`);
         try {
-          await this.mailService.sendVerificationEmail(dto.email, verificationToken);
+          await this.mailService.sendVerificationEmail(email, verificationToken);
         } catch (error) {
           console.error('Email sending failed:', error);
-          throw new BadRequestException('Failed to send verification email. Please check your email address and internet connection.');
+          throw new BadRequestException('Failed to send verification email.');
         }
         return { message: 'Account exists but was not verified. A new OTP has been sent to your email.' };
       }
-      throw new BadRequestException('Email already registered');
+      throw new BadRequestException('Account already exists and is verified. Please log in.');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const verificationToken = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
 
     await this.usersService.createUser({
-      email: dto.email,
+      email: email,
       passwordHash,
       name: dto.name,
       role: 'student',
@@ -53,12 +54,12 @@ export class AuthService {
     });
 
     // Send Real Email
-    console.log(`[AUTH] Generated OTP for ${dto.email}: ${verificationToken}`);
+    console.log(`[AUTH] Generated OTP for ${email}: ${verificationToken}`);
     try {
-      await this.mailService.sendVerificationEmail(dto.email, verificationToken);
+      await this.mailService.sendVerificationEmail(email, verificationToken);
     } catch (error) {
       // If email fails, delete the user so they can try again
-      await this.usersService.deleteByEmail(dto.email);
+      await this.usersService.deleteByEmail(email);
       console.error('Email sending failed:', error);
       throw new BadRequestException('Failed to send verification email. Please check your email address and internet connection.');
     }
@@ -67,7 +68,8 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, otp: string) {
-    const user = await this.usersService.findByEmail(email) as any;
+    const normalizedEmail = email.toLowerCase();
+    const user = await this.usersService.findByEmail(normalizedEmail) as any;
     if (!user) throw new BadRequestException('User not found');
 
     if (user.isVerified) return { message: 'Already verified' };
@@ -81,18 +83,20 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email) as any;
+    const normalizedEmail = dto.email.toLowerCase();
+    const user = await this.usersService.findByEmail(normalizedEmail) as any;
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials (User not found)');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials (Password incorrect)');
     }
 
     if (user.role === 'student' && !user.isVerified) {
-      throw new UnauthorizedException('Email not verified. Please verify your email first.');
+      // Auto-fix deadlock: if they try to login but aren't verified, maybe we should tell them to check email?
+      throw new UnauthorizedException('Email not verified. Please register again to resend OTP.');
     }
 
     const accessToken = this.jwtService.sign({
@@ -114,3 +118,4 @@ export class AuthService {
     };
   }
 }
+
