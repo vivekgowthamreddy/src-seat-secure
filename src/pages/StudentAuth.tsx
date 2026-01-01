@@ -29,7 +29,7 @@ const StudentAuth = () => {
 
     try {
       if (isVerification) {
-        await fetch('http://localhost:4000/auth/verify', {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/auth/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email, otp: formData.otp })
@@ -197,8 +197,8 @@ const StudentAuth = () => {
                       type="button"
                       onClick={() => setGender("male")}
                       className={`h-12 rounded-xl border transition-all duration-200 ${gender === "male"
-                          ? "bg-gradient-primary border-transparent text-primary-foreground"
-                          : "bg-secondary/50 border-border/50 text-foreground hover:border-primary/50"
+                        ? "bg-gradient-primary border-transparent text-primary-foreground"
+                        : "bg-secondary/50 border-border/50 text-foreground hover:border-primary/50"
                         }`}
                     >
                       Male
@@ -207,8 +207,8 @@ const StudentAuth = () => {
                       type="button"
                       onClick={() => setGender("female")}
                       className={`h-12 rounded-xl border transition-all duration-200 ${gender === "female"
-                          ? "bg-gradient-primary border-transparent text-primary-foreground"
-                          : "bg-secondary/50 border-border/50 text-foreground hover:border-primary/50"
+                        ? "bg-gradient-primary border-transparent text-primary-foreground"
+                        : "bg-secondary/50 border-border/50 text-foreground hover:border-primary/50"
                         }`}
                     >
                       Female
