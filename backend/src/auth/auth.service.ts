@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
+@Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
@@ -16,58 +17,46 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const email = dto.email.toLowerCase();
-    if (!email.endsWith('@rguktn.ac.in') && !email.endsWith('@college.edu')) { // college.edu for dev/admin
-      throw new BadRequestException('Use official college email (@rguktn.ac.in)');
+
+    // Strict Domain Validation
+    if (!email.endsWith('@rguktn.ac.in') && !email.endsWith('@college.edu')) {
+      throw new BadRequestException('Registration restricted to official college email (@rguktn.ac.in)');
     }
 
     const existing = await this.usersService.findByEmail(email);
     if (existing) {
+      // If they exist (verified or not), just tell them to login. 
+      // Since we are removing OTP, we can't "re-verify" them. 
+      // If they aren't verified from before, they can't login? 
+      // Fix: If they exist but are NOT verified, we should probably just verify them now?
+      // No, simpler: "Account already exists. Please log in."
+      // If they forgot password, that's a separate issue (Password Reset), but for now, they exist.
       if (!existing.isVerified) {
-        // Handle "Unverified Deadlock": Resend OTP
-        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-        // Use user._id from the existing record
-        await this.usersService.update((existing as any)._id, { verificationToken });
-
-        console.log(`[AUTH] Resending OTP for ${email}: ${verificationToken}`);
-        this.mailService.sendVerificationEmail(email, verificationToken); // Fire and forget
-        return { message: 'Account exists but was not verified. A new OTP has been sent to your email.' };
+        // Auto-verify legacy users who got stuck
+        await this.usersService.update((existing as any)._id, { isVerified: true });
+        return { message: 'Account verified. Please log in.' };
       }
-      throw new BadRequestException('Account already exists and is verified. Please log in.');
+      throw new BadRequestException('Account already exists. Please log in.');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
 
+    // Create User - Auto Verified
     await this.usersService.createUser({
       email: email,
       passwordHash,
       name: dto.name,
       role: 'student',
       gender: dto.gender,
-      verificationToken,
-      isVerified: false,
+      isVerified: true, // Bypass Email Verification
     });
 
-    // Send Real Email (Background)
-    console.log(`[AUTH] Generated OTP for ${email}: ${verificationToken}`);
-    this.mailService.sendVerificationEmail(email, verificationToken); // Fire and forget
-
-    return { message: 'Registration successful. Please verify your email with the OTP sent.' };
+    return { message: 'Registration successful. Please log in.' };
   }
 
   async verifyEmail(email: string, otp: string) {
-    const normalizedEmail = email.toLowerCase();
-    const user = await this.usersService.findByEmail(normalizedEmail) as any;
-    if (!user) throw new BadRequestException('User not found');
-
-    if (user.isVerified) return { message: 'Already verified' };
-
-    if (user.verificationToken !== otp) {
-      throw new BadRequestException('Invalid OTP');
-    }
-
-    await this.usersService.update(user._id, { isVerified: true, verificationToken: undefined });
-    return { message: 'Email verified successfully' };
+    // Deprecated but kept to avoid 404s if frontend calls it
+    return { message: 'Email verification is disabled. Please log in.' };
   }
 
   async login(dto: LoginDto) {
@@ -82,9 +71,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials (Password incorrect)');
     }
 
+    // Auto-verify if they manage to login (e.g. legacy unverified users)
     if (user.role === 'student' && !user.isVerified) {
-      // Auto-fix deadlock: if they try to login but aren't verified, maybe we should tell them to check email?
-      throw new UnauthorizedException('Email not verified. Please register again to resend OTP.');
+      await this.usersService.update(user._id, { isVerified: true });
     }
 
     const accessToken = this.jwtService.sign({
@@ -101,7 +90,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         gender: user.gender,
-        isVerified: user.isVerified
+        isVerified: true
       },
     };
   }

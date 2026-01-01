@@ -12,9 +12,8 @@ import srcLogo from "@/assets/src-logo.webp";
 const StudentAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [isVerification, setIsVerification] = useState(false);
   const [gender, setGender] = useState<"male" | "female" | null>(null);
-  const [formData, setFormData] = useState({ email: "", password: "", name: "", otp: "" });
+  const [formData, setFormData] = useState({ email: "", password: "", name: "" }); // request otp removed
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,19 +27,12 @@ const StudentAuth = () => {
     setIsLoading(true);
 
     try {
-      if (isVerification) {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/auth/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email, otp: formData.otp })
-        }).then(async res => {
-          if (!res.ok) throw new Error(JSON.parse(await res.text()).message);
-          return res.json();
-        });
-        toast({ title: "Verified!", description: "You can now log in." });
-        setIsVerification(false);
-        setIsLogin(true);
-      } else if (isLogin) {
+      // Common Email Validation
+      if (!formData.email.toLowerCase().endsWith('@rguktn.ac.in') && !formData.email.endsWith('@college.edu')) {
+        throw new Error("Only official college emails (@rguktn.ac.in) are allowed.");
+      }
+
+      if (isLogin) {
         const response = await apiClient.login(formData.email, formData.password);
         authHelper.setToken(response.accessToken);
         authHelper.setUser(response.user);
@@ -50,13 +42,20 @@ const StudentAuth = () => {
         });
         navigate("/student/dashboard");
       } else {
+        // Register Mode
         if (!gender) throw new Error("Please select your gender");
-        const res = await apiClient.register(formData.email, formData.password, formData.name, gender);
+
+        await apiClient.register(formData.email, formData.password, formData.name, gender);
+
         toast({
-          title: "Account Created",
-          description: res.message || "Please check your email for the OTP.",
+          title: "Account Created Successfully",
+          description: "You can now log in with your credentials.",
         });
-        setIsVerification(true);
+
+        // Switch to login
+        setIsLogin(true);
+        // Clear sensitive fields but keep email
+        setFormData(prev => ({ ...prev, password: "" }));
       }
     } catch (error) {
       toast({
@@ -98,35 +97,18 @@ const StudentAuth = () => {
           {/* Title */}
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl md:text-4xl font-bold text-gradient mb-3">
-              {isVerification ? "Verify Email" : isLogin ? "Welcome Back" : "Join SAC Movies"}
+              {isLogin ? "Welcome Back" : "Join SAC Movies"}
             </h1>
             <p className="text-muted-foreground">
-              {isVerification ? "Enter the OTP sent to your email" : isLogin ? "Sign in to your student account" : "Create your account with college email"}
+              {isLogin ? "Sign in to your student account" : "Create your account with college email"}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="glass rounded-2xl p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {isVerification && (
-                <div className="space-y-2">
-                  <Label htmlFor="otp" className="text-sm text-muted-foreground">OTP</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder="Enter 6-digit OTP"
-                      value={formData.otp}
-                      onChange={handleChange}
-                      className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
-                      required
-                    />
-                  </div>
-                </div>
-              )}
 
-              {!isLogin && !isVerification && (
+              {!isLogin && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -148,44 +130,39 @@ const StudentAuth = () => {
                 </motion.div>
               )}
 
-              {(!isVerification) && (
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm text-muted-foreground">College Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="nXXXXXX@rguktn.ac.in"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
-                      required
-                      disabled={isVerification}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm text-muted-foreground">College Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="nXXXXXX@rguktn.ac.in"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
+                    required
+                  />
                 </div>
-              )}
+              </div>
 
-              {!isVerification && (
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm text-muted-foreground">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
-                      required
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm text-muted-foreground">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="pl-12 h-12 bg-secondary/50 border-border/50 focus:border-primary rounded-xl"
+                    required
+                  />
                 </div>
-              )}
+              </div>
 
-              {!isLogin && !isVerification && (
+              {!isLogin && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -229,27 +206,25 @@ const StudentAuth = () => {
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    {isVerification ? "Verify Email" : isLogin ? "Sign In" : "Create Account"}
+                    {isLogin ? "Sign In" : "Create Account"}
                     <ArrowRight className="w-4 h-4" />
                   </span>
                 )}
               </Button>
             </form>
 
-            {!isVerification && (
-              <div className="mt-6 text-center">
-                <p className="text-muted-foreground text-sm">
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-                  <button
-                    type="button"
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {isLogin ? "Sign Up" : "Sign In"}
-                  </button>
-                </p>
-              </div>
-            )}
+            <div className="mt-6 text-center">
+              <p className="text-muted-foreground text-sm">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-primary hover:underline font-medium"
+                >
+                  {isLogin ? "Sign Up" : "Sign In"}
+                </button>
+              </p>
+            </div>
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
