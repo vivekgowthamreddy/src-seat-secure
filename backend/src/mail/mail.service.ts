@@ -59,42 +59,37 @@ export class MailService {
     }
 
     async sendVerificationEmail(to: string, otp: string) {
-        // Create a fresh transporter for every email to avoid stale connections
-        const host = this.configService.get<string>('SMTP_HOST');
-        const port = this.configService.get<number>('SMTP_PORT') || 587;
-        const isSecure = port === 465;
+        try {
+            // Create a fresh transporter for every email to avoid stale connections
+            // Render/Cloud Fix: Explicitly use Port 587 with STARTTLS
+            const config = {
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false, // Must be false for 587
+                auth: {
+                    user: this.configService.get<string>('SMTP_USER'),
+                    pass: this.configService.get<string>('SMTP_PASS'),
+                },
+                tls: {
+                    ciphers: 'SSLv3',
+                    rejectUnauthorized: false
+                },
+                requireTLS: true,
+                connectionTimeout: 10000, // 10s
+                greetingTimeout: 10000,
+            };
 
-        // Render/Cloud Fix: Explicitly use Port 587 with STARTTLS
-        // This avoids the SSL handshake hang common on Port 465
-        const config = {
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false, // Must be false for 587
-            auth: {
-                user: this.configService.get<string>('SMTP_USER'),
-                pass: this.configService.get<string>('SMTP_PASS'),
-            },
-            tls: {
-                ciphers: 'SSLv3'
-            },
-            requireTLS: true,
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-        };
+            this.logger.log(`[Mail] Sending OTP to ${to} via smtp.gmail.com:587`);
 
-        this.logger.log(`[Mail] Connecting to smtp.gmail.com:587 (STARTTLS)`);
+            const transporter = nodemailer.createTransport(config);
 
-        const transporter = nodemailer.createTransport(config);
-
-        this.logger.log(`Sending email to ${to} via 587 STARTTLS`);
-
-        // Fire-and-forget
-        transporter.sendMail({
-            from: `"SAC Booking" <${this.configService.get<string>('SMTP_USER')}>`,
-            to,
-            subject: 'Verify Your Email - SAC Seat Secure',
-            text: `Your One-Time Password (OTP) for registration is: ${otp}. It expires in 10 minutes.`,
-            html: `
+            // Fire-and-forget promise
+            const info = await transporter.sendMail({
+                from: `"SAC Booking" <${this.configService.get<string>('SMTP_USER')}>`,
+                to,
+                subject: 'Verify Your Email - SAC Seat Secure',
+                text: `Your One-Time Password (OTP) for registration is: ${otp}. It expires in 10 minutes.`,
+                html: `
             <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
                 <h2 style="color: #333;">SAC Seat Secure</h2>
                 <p>Thank you for registering. Please use the following OTP to verify your email address:</p>
@@ -104,12 +99,14 @@ export class MailService {
                 <p style="font-size: 12px; color: #777;">If you did not request this, please ignore this email.</p>
             </div>
             `,
-        }).then((info) => {
+            });
             this.logger.log(`Message sent: ${info.messageId}`);
-        }).catch((error) => {
-            this.logger.error('Failed to send email in background', error);
-        });
-
-        return { message: 'Email queued' };
+            return { message: 'Email sent successfully' };
+        } catch (error) {
+            this.logger.error('Failed to send email', error);
+            // We don't throw here to avoid crashing the auth flow if email fails, 
+            // but in a real scenario we might want to handle this better.
+            return { message: 'Failed to send email' };
+        }
     }
 }
