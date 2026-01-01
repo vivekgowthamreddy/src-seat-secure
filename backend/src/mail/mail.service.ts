@@ -64,24 +64,20 @@ export class MailService {
         const port = this.configService.get<number>('SMTP_PORT') || 587;
         const isSecure = port === 465;
 
-        // Simplified config to reduce handshake complexity
+        // Use 'service: gmail' to automatically handle host/port/secure settings
         const config = {
-            host: host,
-            port: port,
-            // secure is undefined, let nodemailer detect based on port
+            service: 'gmail',
             auth: {
                 user: this.configService.get<string>('SMTP_USER'),
                 pass: this.configService.get<string>('SMTP_PASS'),
             },
-            connectionTimeout: 20000, // 20s
-            greetingTimeout: 20000,
         };
 
-        this.logger.log(`[Mail] Connecting to ${host}:${port} (User: ${config.auth.user})`);
+        this.logger.log(`[Mail] Connecting via Gmail Service (User: ${config.auth.user})`);
 
         const transporter = nodemailer.createTransport(config);
 
-        this.logger.log(`Sending email to ${to} via ${host}:${port}`);
+        this.logger.log(`Sending email to ${to} via Gmail Service`);
 
         // Fire-and-forget
         transporter.sendMail({
