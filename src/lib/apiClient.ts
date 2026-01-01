@@ -23,11 +23,11 @@ export const apiClient = {
     return res.json();
   },
 
-  googleLogin: async (token: string) => {
+  googleLogin: async (token: string, gender?: string) => {
     const res = await fetch(`${API_BASE}/auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, gender }),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();

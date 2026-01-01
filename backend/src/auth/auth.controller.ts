@@ -23,7 +23,7 @@ export class AuthController {
   }
 
   @Post('google')
-  async googleAuth(@Body() body: { token: string }) {
-    return this.authService.googleLogin(body.token);
+  async googleAuth(@Body() body: { token: string; gender?: string }) {
+    return this.authService.googleLogin(body.token, body.gender);
   }
 }

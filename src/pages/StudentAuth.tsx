@@ -10,6 +10,9 @@ import { useGoogleLogin } from "@react-oauth/google";
 
 const StudentAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [selectedGender, setSelectedGender] = useState<string | null>(null);
+  const [tempToken, setTempToken] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -19,8 +22,18 @@ const StudentAuth = () => {
       setIsLoading(true);
       try {
         console.log("Google Token Response:", tokenResponse);
-        const response = await apiClient.googleLogin(tokenResponse.access_token);
+        // Initial Login Attempt
+        let response = await apiClient.googleLogin(tokenResponse.access_token);
 
+        // Check if New User requiring registration
+        if (response.isNewUser) {
+          setTempToken(tokenResponse.access_token); // Save token for retry
+          setShowGenderModal(true); // Show modal
+          setIsLoading(false); // Stop loading to allow interaction
+          return;
+        }
+
+        // Existing User or Completed Registration
         authHelper.setToken(response.accessToken);
         authHelper.setUser(response.user);
 
@@ -50,7 +63,6 @@ const StudentAuth = () => {
           description: message,
           variant: "destructive",
         });
-      } finally {
         setIsLoading(false);
       }
     },
@@ -60,9 +72,31 @@ const StudentAuth = () => {
         description: "Google Login failed. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     },
   });
 
+  const completeRegistration = async () => {
+    if (!selectedGender || !tempToken) return;
+    setIsLoading(true);
+    try {
+      const response = await apiClient.googleLogin(tempToken, selectedGender);
+
+      authHelper.setToken(response.accessToken);
+      authHelper.setUser(response.user);
+
+      toast({
+        title: "Registration Complete",
+        description: "Welcome! Redirecting...",
+      });
+      navigate("/student/dashboard");
+    } catch (error: any) {
+      toast({ title: "Registration Failed", description: error.message || "Failed to complete registration", variant: "destructive" });
+      setIsLoading(false);
+    } finally {
+      setShowGenderModal(false);
+    }
+  };
 
 
   return (
@@ -162,6 +196,58 @@ const StudentAuth = () => {
           </div>
         </motion.div>
       </main>
+
+      {/* Gender Selection Modal */}
+      {showGenderModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-card border border-border p-6 rounded-2xl shadow-2xl max-w-sm w-full"
+          >
+            <h3 className="font-display text-xl font-bold mb-2 text-center">Select Your Gender</h3>
+            <p className="text-muted-foreground text-center text-sm mb-6">
+              This is required to show you the correct seat allocation.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <button
+                onClick={() => setSelectedGender("male")}
+                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${selectedGender === "male"
+                  ? "bg-blue-500/20 border-blue-500 text-blue-500 ring-2 ring-blue-500/50"
+                  : "bg-secondary/30 border-white/10 hover:bg-secondary/50 text-muted-foreground"
+                  }`}
+              >
+                <span className="text-2xl">👨</span>
+                <span className="font-semibold">Male</span>
+              </button>
+              <button
+                onClick={() => setSelectedGender("female")}
+                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${selectedGender === "female"
+                  ? "bg-pink-500/20 border-pink-500 text-pink-500 ring-2 ring-pink-500/50"
+                  : "bg-secondary/30 border-white/10 hover:bg-secondary/50 text-muted-foreground"
+                  }`}
+              >
+                <span className="text-2xl">👩</span>
+                <span className="font-semibold">Female</span>
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="ghost" className="flex-1" onClick={() => setShowGenderModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-primary text-primary-foreground"
+                disabled={!selectedGender}
+                onClick={completeRegistration}
+              >
+                Continue
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

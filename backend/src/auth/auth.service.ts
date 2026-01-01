@@ -130,7 +130,7 @@ export class AuthService {
     };
   }
 
-  async googleLogin(accessToken: string) {
+  async googleLogin(accessToken: string, gender?: string) {
     try {
       const response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -138,54 +138,51 @@ export class AuthService {
       const { email, name, picture } = response.data;
       const normalizedEmail = email.toLowerCase();
 
-      // Check if user exists
+
+      // 3. User Existence Check
       let user = await this.usersService.findByEmail(normalizedEmail) as any;
 
+      // 4. Registration Logic (New User)
       if (!user) {
-        // Regex Validation
-        // Allow 6 or 7 digits for student ID
-        const domainRegex = /^[nos]\d{6,7}@rgukt(n|sklm|ong)\.ac\.in$/;
 
+        // If gender is missing in request, return prompt
+        if (!gender) {
+          return {
+            isNewUser: true,
+            email: normalizedEmail,
+            name: name,
+            message: "Please select your gender to complete registration."
+          };
+        }
+
+        // Domain Validation
+        const domainRegex = /^[nos]\d{6,7}@rgukt(n|sklm|ong)\.ac\.in$/;
         if (!domainRegex.test(normalizedEmail)) {
           throw new BadRequestException('Email domain not allowed. Must be a valid student ID email from RGUKT (N/SKLM/ONG).');
         }
 
         // Create new user
-        // We don't have gender from Google, defaulting or asking user might be needed? 
-        // User request: "register new user no need of password and all u=then rest are the same"
-        // I'll set a default or leave it empty if schema allows.
-        // User schema: gender is an enum ['male', 'female'], not required?
-        // Let's check schema again.
-
-        // checking schema...
-        // @Prop({ enum: ['male', 'female'] })
-        // gender: string;
-        // It is NOT marked as required in Prop, so it might be optional. 
-        // But let's check if there are other constraints. 
-        // Assuming optional.
-
-        // Create new user (Verified)
-        // No gender available from minimal google scope or not requested, defaulting to none or letting user update later?
-        // Schema doesn't strictly require it on creation if handled properly. Mongoose might complain if enum is strict.
-        // Let's set a placeholder or null if schema allows. Providing 'male' or 'female' arbitrarily is bad.
-        // Looking at schema: @Prop({ enum: ['male', 'female'] }) gender: string; It's not required explicitly in Prop decorator.
-
         user = await this.usersService.createUser({
           email: normalizedEmail,
           name: name,
           role: 'student',
           isVerified: true,
-          // verificationToken not needed
+          gender: gender,
         });
 
       } else {
-        // Auto-verify if they were unverified and now logging in with Google
+        // 5. Login Logic (Existing User)
+        // Auto-verify if unverified
         if (!user.isVerified) {
           await this.usersService.update(user._id, { isVerified: true });
           user.isVerified = true;
         }
+
+        // STRICT: Do NOT update gender or profile for existing users
+        // Login proceeds seamlessly
       }
 
+      // 6. Response Contract
       const jwtPayload = {
         sub: user._id,
         email: user.email,
@@ -195,6 +192,7 @@ export class AuthService {
       const jwtToken = this.jwtService.sign(jwtPayload);
 
       return {
+        isNewUser: false,
         accessToken: jwtToken,
         user: {
           id: user._id,
