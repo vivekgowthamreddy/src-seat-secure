@@ -38,6 +38,7 @@ export class AuthService {
     });
 
     // Send Real Email
+    console.log(`[AUTH] Generated OTP for ${dto.email}: ${verificationToken}`);
     try {
       await this.mailService.sendVerificationEmail(dto.email, verificationToken);
     } catch (error) {

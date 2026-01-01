@@ -54,7 +54,7 @@ export class MailService {
 
         try {
             const info = await this.transporter.sendMail({
-                from: '"SAC Booking" <srcbooking@gmail.com>', // sender address
+                from: `"SAC Booking" <${this.configService.get<string>('SMTP_USER')}>`, // sender address
                 to, // list of receivers
                 subject: 'Verify Your Email - SAC Seat Secure', // Subject line
                 text: `Your One-Time Password (OTP) for registration is: ${otp}. It expires in 10 minutes.`, // plain text body
