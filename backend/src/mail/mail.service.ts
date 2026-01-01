@@ -67,15 +67,17 @@ export class MailService {
         const transporter = nodemailer.createTransport({
             host: host,
             port: port,
-            secure: isSecure,
+            secure: false, // Try STARTTLS for everything to avoid SSL handshake hangs
             auth: {
                 user: this.configService.get<string>('SMTP_USER'),
                 pass: this.configService.get<string>('SMTP_PASS'),
             },
-            tls: {
-                rejectUnauthorized: false
-            }
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 15000,
         });
+
+        this.logger.log(`Sending email to ${to} via ${host}:${port}`);
 
         // Fire-and-forget
         transporter.sendMail({
