@@ -64,20 +64,29 @@ export class MailService {
         const port = this.configService.get<number>('SMTP_PORT') || 587;
         const isSecure = port === 465;
 
-        // Use 'service: gmail' to automatically handle host/port/secure settings
+        // Render/Cloud Fix: Explicitly use Port 587 with STARTTLS
+        // This avoids the SSL handshake hang common on Port 465
         const config = {
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // Must be false for 587
             auth: {
                 user: this.configService.get<string>('SMTP_USER'),
                 pass: this.configService.get<string>('SMTP_PASS'),
             },
+            tls: {
+                ciphers: 'SSLv3'
+            },
+            requireTLS: true,
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
         };
 
-        this.logger.log(`[Mail] Connecting via Gmail Service (User: ${config.auth.user})`);
+        this.logger.log(`[Mail] Connecting to smtp.gmail.com:587 (STARTTLS)`);
 
         const transporter = nodemailer.createTransport(config);
 
-        this.logger.log(`Sending email to ${to} via Gmail Service`);
+        this.logger.log(`Sending email to ${to} via 587 STARTTLS`);
 
         // Fire-and-forget
         transporter.sendMail({
