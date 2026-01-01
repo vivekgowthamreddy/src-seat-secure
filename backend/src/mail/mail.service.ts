@@ -64,18 +64,22 @@ export class MailService {
         const port = this.configService.get<number>('SMTP_PORT') || 587;
         const isSecure = port === 465;
 
-        const transporter = nodemailer.createTransport({
+        // Simplified config to reduce handshake complexity
+        const config = {
             host: host,
             port: port,
-            secure: false, // Try STARTTLS for everything to avoid SSL handshake hangs
+            // secure is undefined, let nodemailer detect based on port
             auth: {
                 user: this.configService.get<string>('SMTP_USER'),
                 pass: this.configService.get<string>('SMTP_PASS'),
             },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 15000,
-        });
+            connectionTimeout: 20000, // 20s
+            greetingTimeout: 20000,
+        };
+
+        this.logger.log(`[Mail] Connecting to ${host}:${port} (User: ${config.auth.user})`);
+
+        const transporter = nodemailer.createTransport(config);
 
         this.logger.log(`Sending email to ${to} via ${host}:${port}`);
 
