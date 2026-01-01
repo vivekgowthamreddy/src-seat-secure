@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import srcLogoWhite from "@/assets/src-logo-white.png";
+import srcLogoWhite from "@/assets/src-logo-white.webp";
 
 const Footer = () => {
   return (

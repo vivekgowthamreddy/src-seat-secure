@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient, authHelper } from "@/lib/apiClient";
-import srcLogo from "@/assets/src-logo.jpg";
-import heroImage from "@/assets/sac-auditorium-real.jpg";
+import srcLogo from "@/assets/src-logo.webp";
+import heroImage from "@/assets/sac-auditorium-real.webp";
 import { ROWS, getSeatsForRow, hasCenterAisle, getGapPosition, getGapClass, type SeatStatus } from "@/data/seatLayout";
 import type { Show, Movie, SeatRow } from "@/lib/types";
 

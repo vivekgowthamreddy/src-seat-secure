@@ -4,7 +4,7 @@ import { Shield, Users, CheckCircle, AlertTriangle, ArrowRight, Film, Armchair, 
 import { Button } from "@/components/ui/button";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import heroImage from "@/assets/sac-auditorium-real.jpg";
+import heroImage from "@/assets/sac-auditorium-real.webp";
 import { TOTAL_SEATS } from "@/data/seatLayout";
 
 const fadeInUp = {

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient, authHelper } from "@/lib/apiClient";
-import srcLogo from "@/assets/src-logo.jpg";
+import srcLogo from "@/assets/src-logo.webp";
 
 const StudentAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
