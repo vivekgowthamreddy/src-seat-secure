@@ -21,6 +21,21 @@ export class AuthService {
 
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
+      if (!existing.isVerified) {
+        // Handle "Unverified Deadlock": Resend OTP
+        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+        // Use user._id from the existing record (casted to any or checked against interface if available)
+        await this.usersService.update((existing as any)._id, { verificationToken });
+
+        console.log(`[AUTH] Resending OTP for ${dto.email}: ${verificationToken}`);
+        try {
+          await this.mailService.sendVerificationEmail(dto.email, verificationToken);
+        } catch (error) {
+          console.error('Email sending failed:', error);
+          throw new BadRequestException('Failed to send verification email. Please check your email address and internet connection.');
+        }
+        return { message: 'Account exists but was not verified. A new OTP has been sent to your email.' };
+      }
       throw new BadRequestException('Email already registered');
     }
 
