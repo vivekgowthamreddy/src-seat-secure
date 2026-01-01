@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import srcLogo from "@/assets/src-logo.jpg";
+import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
 
 const AdminLogin = () => {

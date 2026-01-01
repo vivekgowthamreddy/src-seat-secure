@@ -5,7 +5,7 @@ import { ArrowLeft, Calendar, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import srcLogo from "@/assets/src-logo.jpg";
+import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
 
 import { Movie, Show } from "@/lib/types";
