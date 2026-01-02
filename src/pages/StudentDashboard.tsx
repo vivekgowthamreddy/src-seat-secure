@@ -226,7 +226,7 @@ const StudentDashboard = () => {
                       </div>
                       <div className="flex items-center gap-2 mt-2 w-full">
                         <span className="text-white/50 text-xs uppercase tracking-wider font-semibold mr-2">Booking ID:</span>
-                        <span className="font-mono text-accent">SRC-{currentBooking.id.slice(-6).toUpperCase()}</span>
+                        <span className="font-mono text-accent bg-white/10 px-2 py-1 rounded border border-white/5 shadow-sm">SRC-{currentBooking.id.slice(-6).toUpperCase()}</span>
                       </div>
                     </>
                   )}

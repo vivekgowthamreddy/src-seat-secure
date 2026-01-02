@@ -123,7 +123,7 @@ const BookingConfirmation = () => {
           <Card className="border-0 shadow-xl overflow-hidden">
             <div className="bg-primary p-6 text-center">
               <p className="text-primary-foreground/70 text-sm mb-1">Your Seat Number</p>
-              <p className="text-5xl font-display font-bold text-accent">{seatId}</p>
+              <p className="text-5xl font-display font-bold text-white drop-shadow-md">{seatId}</p>
             </div>
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center gap-3">
