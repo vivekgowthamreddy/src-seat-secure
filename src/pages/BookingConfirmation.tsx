@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle, Calendar, Clock, Armchair, Film, QrCode, Home, Download } from "lucide-react";
+import { CheckCircle, Calendar, Clock, Armchair, Film, QrCode, Home, Download, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import srcLogo from "@/assets/src-logo.webp";
@@ -17,6 +17,8 @@ const BookingConfirmation = () => {
   const [booking, setBooking] = useState<Booking | null>(null); // State for actual booking
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const user = authHelper.getUser();
 
   useEffect(() => {
     const loadData = async () => {
@@ -167,6 +169,12 @@ const BookingConfirmation = () => {
                   <Armchair className="w-5 h-5 text-muted-foreground" />
                   <div><p className="text-xs text-muted-foreground">Category</p><p className="font-semibold text-foreground capitalize">{show.category} Show</p></div>
                 </div>
+                {user && (
+                  <div className="flex items-center gap-3">
+                    <UserIcon className="w-5 h-5 text-muted-foreground" />
+                    <div><p className="text-xs text-muted-foreground">Student</p><p className="font-semibold text-foreground">{user.name}</p></div>
+                  </div>
+                )}
 
                 <div className="border-t border-dashed pt-4 mt-4">
                   <div className="flex items-center justify-between">
