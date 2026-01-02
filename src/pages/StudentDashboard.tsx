@@ -195,11 +195,30 @@ const StudentDashboard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        {new Date((currentBooking.showId as Show).date).toLocaleDateString()}
+                        {(() => {
+                          const show = currentBooking.showId as any;
+                          const dateStr = show.date || show.startTime;
+                          try {
+                            return dateStr ? new Date(dateStr).toLocaleDateString('en-IN', {
+                              weekday: 'short',
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            }) : 'Date N/A';
+                          } catch (e) { return 'Invalid Date'; }
+                        })()}
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        {(currentBooking.showId as Show).time}
+                        {(() => {
+                          const show = currentBooking.showId as any;
+                          if (show.time) return show.time;
+                          if (show.startTime) {
+                            const d = new Date(show.startTime);
+                            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                          }
+                          return 'Time N/A';
+                        })()}
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4" />
