@@ -144,6 +144,7 @@ export class AdminController {
 
     // Add columns
     worksheet.columns = [
+      { header: 'Booking ID', key: 'id', width: 15 },
       { header: 'Student Name', key: 'name', width: 30 },
       { header: 'Email', key: 'email', width: 35 },
       { header: 'Seat Number', key: 'seats', width: 20 },
@@ -163,7 +164,14 @@ export class AdminController {
       const userName = user?.name || 'Unknown';
       const userEmail = user?.email || 'Unknown';
 
+      // Use last 6 chars of ID for readability or full ID?
+      // User asked for "srcbooking id". Let's provide the full hex or maybe shorter.
+      // Let's us show full ID for robustness, or maybe "SRC-" prefix.
+      // Let's stick to valid string ID.
+      const bookingId = booking._id.toString().toUpperCase().slice(-6);
+
       worksheet.addRow({
+        id: `SRC-${bookingId}`,
         name: userName,
         email: userEmail,
         seats: booking.seats.join(', '),

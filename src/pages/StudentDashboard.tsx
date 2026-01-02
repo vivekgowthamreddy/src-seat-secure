@@ -224,6 +224,10 @@ const StudentDashboard = () => {
                         <Users className="w-4 h-4" />
                         <span className="capitalize">{(currentBooking.showId as Show).category} Show</span>
                       </div>
+                      <div className="flex items-center gap-2 mt-2 w-full">
+                        <span className="text-white/50 text-xs uppercase tracking-wider font-semibold mr-2">Booking ID:</span>
+                        <span className="font-mono text-accent">SRC-{currentBooking.id.slice(-6).toUpperCase()}</span>
+                      </div>
                     </>
                   )}
                 </div>
