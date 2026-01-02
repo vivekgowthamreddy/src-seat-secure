@@ -37,37 +37,48 @@ const StudentDashboard = () => {
         const token = authHelper.getToken();
         if (!token) return;
 
-        // Fetch User Bookings
-        const userBookings = await apiClient.getBookings(token);
-        // Sort bookings by date descending (newest first)
-        userBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setBookings(userBookings);
+        // Fetch User Bookings and Shows in parallel
+        const [userBookings, allShows] = await Promise.all([
+          apiClient.getBookings(token),
+          apiClient.getShows()
+        ]);
 
-        // Fetch Upcoming Shows
-        const allShows = await apiClient.getShows();
+        // Verify userBookings is an array
+        if (Array.isArray(userBookings)) {
+          // Sort bookings by date descending (newest first)
+          userBookings.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setBookings(userBookings);
+        } else {
+          console.error("Invalid bookings data received:", userBookings);
+          setBookings([]);
+        }
 
         // Filter based on gender
-        const userData = authHelper.getUser();
-        const filteredShows = allShows.filter(show => {
-          if (!userData) return true;
-          if (userData.role === 'admin') return true;
+        const currentUserData = authHelper.getUser();
+        if (Array.isArray(allShows)) {
+          const filteredShows = allShows.filter((show: Show) => {
+            if (!currentUserData) return true;
+            if (currentUserData.role === 'admin') return true;
 
-          const gender = userData.gender?.toLowerCase();
+            const gender = currentUserData.gender?.toLowerCase();
 
-          if (gender === 'male') {
-            return show.category === 'boys' || show.category === 'all';
-          }
+            if (gender === 'male') {
+              return show.category === 'boys' || show.category === 'all';
+            }
 
-          if (gender === 'female') {
-            return show.category === 'girls' || show.category === 'all';
-          }
+            if (gender === 'female') {
+              return show.category === 'girls' || show.category === 'all';
+            }
 
-          // Default for users without gender (old accounts) -> Show only 'all'
-          return show.category === 'all';
-        });
-
-        // Filter out past shows? For now just take 3.
-        setUpcomingShows(filteredShows.slice(0, 3));
+            // Default for users without gender (old accounts) -> Show only 'all'
+            return show.category === 'all';
+          });
+          // Filter out past shows? For now just take 3.
+          setUpcomingShows(filteredShows.slice(0, 3));
+        } else {
+          console.error("Invalid shows data received:", allShows);
+          setUpcomingShows([]);
+        }
 
       } catch (error) {
         console.error("Failed to load dashboard data", error);
@@ -132,7 +143,7 @@ const StudentDashboard = () => {
           className="mb-8"
         >
           <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-2 tracking-tight">
-            Welcome, {user?.name.split(' ')[0]}
+            Welcome, {user?.name ? user.name.split(' ')[0] : 'Student'}
           </h1>
           <p className="text-muted-foreground text-lg">
             One student • One seat • One show
@@ -155,7 +166,7 @@ const StudentDashboard = () => {
                   Your Allocated Seat
                 </div>
                 <CardTitle className="text-6xl md:text-7xl font-display font-semibold tracking-tight">
-                  {currentBooking.seats.join(', ')}
+                  {currentBooking.seats?.join(', ') || 'No Seat'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="relative pb-6">
@@ -281,7 +292,7 @@ const StudentDashboard = () => {
                      Actually, standard simple approach: Conditional Link destination.
                   */}
                     <Link to={userBooking
-                      ? `/student/booking-confirmation/${show.id}/${userBooking.seats.join(',')}`
+                      ? `/student/booking-confirmation/${show.id}/${userBooking.seats?.join(',')}`
                       : `/student/movie/${typeof show.movieId === 'object' ? (show.movieId as Movie).id : show.movieId}`
                     }>
                       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border h-full">
