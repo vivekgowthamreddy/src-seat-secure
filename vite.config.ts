@@ -20,8 +20,9 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['framer-motion', 'lucide-react', 'clsx', 'tailwind-merge'],
+          // 'vendor-ui': ['framer-motion', 'lucide-react', 'clsx', 'tailwind-merge'], // Let Vite split these naturally
         },
+        experimentalMinChunkSize: 500, // Merge small chunks
       },
     },
   },
