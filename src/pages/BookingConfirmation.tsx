@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle, Calendar, Clock, Armchair, Film, QrCode, Home } from "lucide-react";
+import { CheckCircle, Calendar, Clock, Armchair, Film, QrCode, Home, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
+import html2canvas from "html2canvas";
 
 import { User, Booking, Show, Movie } from "@/lib/types";
 
@@ -87,6 +88,29 @@ const BookingConfirmation = () => {
     return "N/A";
   };
 
+  const handleDownload = async () => {
+    const element = document.getElementById('ticket-content');
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher resolution
+        backgroundColor: null, // Transparent background if supported, or white
+        logging: false,
+        useCORS: true // Handle images from external sources if any (logo is local)
+      });
+
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `SRC-Ticket-${seatId}.png`;
+      link.click();
+    } catch (err) {
+      console.error("Failed to download ticket", err);
+      // Fallback to print
+      window.print();
+    }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><p>Loading ticket...</p></div>;
@@ -120,42 +144,49 @@ const BookingConfirmation = () => {
           </div>
 
           {/* Ticket Card */}
-          <Card className="border-0 shadow-xl overflow-hidden">
-            <div className="bg-primary p-6 text-center">
-              <p className="text-primary-foreground/70 text-sm mb-1">Your Seat Number</p>
-              <p className="text-5xl font-display font-bold text-white drop-shadow-md">{seatId}</p>
-            </div>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <Film className="w-5 h-5 text-muted-foreground" />
-                <div><p className="text-xs text-muted-foreground">Movie</p><p className="font-semibold text-foreground">{movie.title}</p></div>
+          <div id="ticket-content">
+            <Card className="border-0 shadow-xl overflow-hidden">
+              <div className="bg-primary p-6 text-center">
+                <p className="text-primary-foreground/70 text-sm mb-1">Your Seat Number</p>
+                <p className="text-5xl font-display font-bold text-primary-foreground drop-shadow-md">{seatId}</p>
               </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-muted-foreground" />
-                <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold text-foreground">{getDateDisplay()}</p></div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-muted-foreground" />
-                <div><p className="text-xs text-muted-foreground">Time</p><p className="font-semibold text-foreground">{getTimeDisplay()}</p></div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Armchair className="w-5 h-5 text-muted-foreground" />
-                <div><p className="text-xs text-muted-foreground">Category</p><p className="font-semibold text-foreground capitalize">{show.category} Show</p></div>
-              </div>
-
-              <div className="border-t border-dashed pt-4 mt-4">
-                <div className="flex items-center justify-between">
-                  <div><p className="text-xs text-muted-foreground">Booking ID</p><p className="font-mono text-sm font-semibold text-foreground">{bookingIdDisplay}</p></div>
-                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center"><QrCode className="w-10 h-10 text-muted-foreground" /></div>
+              <CardContent className="p-6 space-y-4 bg-card">
+                <div className="flex items-center gap-3">
+                  <Film className="w-5 h-5 text-muted-foreground" />
+                  <div><p className="text-xs text-muted-foreground">Movie</p><p className="font-semibold text-foreground">{movie.title}</p></div>
                 </div>
-              </div>
-            </CardContent>
-            <div className="bg-destructive/5 p-4 border-t border-destructive/10">
-              <p className="text-xs text-center text-destructive font-medium">⚠️ Please occupy only your allocated seat. You are responsible for seat {seatId}.</p>
-            </div>
-          </Card>
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-muted-foreground" />
+                  <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold text-foreground">{getDateDisplay()}</p></div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
+                  <div><p className="text-xs text-muted-foreground">Time</p><p className="font-semibold text-foreground">{getTimeDisplay()}</p></div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Armchair className="w-5 h-5 text-muted-foreground" />
+                  <div><p className="text-xs text-muted-foreground">Category</p><p className="font-semibold text-foreground capitalize">{show.category} Show</p></div>
+                </div>
 
-          <Button asChild className="w-full mt-6" size="lg">
+                <div className="border-t border-dashed pt-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div><p className="text-xs text-muted-foreground">Booking ID</p><p className="font-mono text-sm font-semibold text-foreground">{bookingIdDisplay}</p></div>
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center"><QrCode className="w-10 h-10 text-muted-foreground" /></div>
+                  </div>
+                </div>
+              </CardContent>
+              <div className="bg-destructive/5 p-4 border-t border-destructive/10">
+                <p className="text-xs text-center text-destructive font-medium">⚠️ Please occupy only your allocated seat. You are responsible for seat {seatId}.</p>
+              </div>
+            </Card>
+          </div>
+
+          <Button onClick={handleDownload} className="w-full mt-6 mb-3" size="lg" variant="default">
+            <Download className="w-4 h-4 mr-2" />
+            Download Ticket
+          </Button>
+
+          <Button asChild className="w-full" size="lg" variant="outline">
             <Link to="/student/dashboard"><Home className="w-4 h-4 mr-2" />Back to Dashboard</Link>
           </Button>
         </motion.div>
