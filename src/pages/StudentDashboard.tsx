@@ -45,9 +45,12 @@ const StudentDashboard = () => {
 
         // Verify userBookings is an array
         if (Array.isArray(userBookings)) {
+          // Filter out bookings where show data is missing (e.g. show deleted)
+          const validBookings = userBookings.filter((b: any) => b.showId && typeof b.showId === 'object');
+
           // Sort bookings by date descending (newest first)
-          userBookings.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setBookings(userBookings);
+          validBookings.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setBookings(validBookings);
         } else {
           console.error("Invalid bookings data received:", userBookings);
           setBookings([]);
@@ -57,6 +60,16 @@ const StudentDashboard = () => {
         const currentUserData = authHelper.getUser();
         if (Array.isArray(allShows)) {
           const filteredShows = allShows.filter((show: Show) => {
+            // Filter out shows where movie data is missing (e.g. movie deleted)
+            if (!show.movieId || (typeof show.movieId === 'object' && !('title' in show.movieId))) {
+              // Use a loose check or strict check depending on how the type is defined. 
+              // If populated, it should have title. If not populated, it's an ID string.
+              // We need the movie object to display details. If it's just an ID it might crash if we assume object.
+              // But usually getShows returns populated movies. 
+              // If movieId is null, drop it.
+              if (!show.movieId) return false;
+            }
+
             if (!currentUserData) return true;
             if (currentUserData.role === 'admin') return true;
 
@@ -176,7 +189,7 @@ const StudentDashboard = () => {
                     <>
                       <div className="flex items-center gap-2">
                         <Film className="w-4 h-4" />
-                        {typeof (currentBooking.showId as Show).movieId === 'object'
+                        {typeof (currentBooking.showId as Show).movieId === 'object' && (currentBooking.showId as Show).movieId
                           ? ((currentBooking.showId as Show).movieId as Movie).title
                           : "Movie"}
                       </div>
@@ -298,14 +311,14 @@ const StudentDashboard = () => {
                       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border h-full">
                         <div className="aspect-[16/10] relative overflow-hidden">
                           <img
-                            src={typeof show.movieId === 'object' ? (show.movieId as Movie).poster : ""}
-                            alt={typeof show.movieId === 'object' ? (show.movieId as Movie).title : "Movie"}
+                            src={typeof show.movieId === 'object' && show.movieId ? (show.movieId as Movie).poster : ""}
+                            alt={typeof show.movieId === 'object' && show.movieId ? (show.movieId as Movie).title : "Movie"}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent" />
                           <div className="absolute bottom-0 left-0 right-0 p-4">
                             <p className="text-white font-display font-semibold text-lg leading-tight">
-                              {typeof show.movieId === 'object' ? (show.movieId as Movie).title : "Movie"}
+                              {typeof show.movieId === 'object' && show.movieId ? (show.movieId as Movie).title : "Movie"}
                             </p>
                             <div className="flex items-center gap-3 text-white/70 text-sm mt-2">
                               <span>{new Date(show.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
