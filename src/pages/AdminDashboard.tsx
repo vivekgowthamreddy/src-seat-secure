@@ -412,15 +412,15 @@ const AdminDashboard = () => {
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="overflow-x-auto p-0 pb-4">
                   {loadingGlobalSeats ? <div className="p-8 text-center">Loading layout...</div> : (
-                    <div className="min-w-[700px] flex justify-center">
-                      <div className="inline-block">
+                    <div className="min-w-max mx-auto px-4">
+                      <div className="inline-block pt-8">
                         <div className="text-center mb-6"><div className="h-2 bg-gradient-primary rounded-full mx-auto w-3/4 mb-1" /><span className="text-xs text-muted-foreground">SCREEN</span></div>
                         <div className="space-y-1">
                           {staticLayout.map((row) => (
                             <div key={row.name} className={`flex items-center gap-1 justify-center ${row.name === 'H' ? 'mb-8' : ''}`}>
-                              <span className="w-5 text-xs text-muted-foreground text-right mr-2">{row.name}</span>
+                              <span className="w-5 text-xs text-muted-foreground text-right mr-2 sticky left-0 bg-background">{row.name}</span>
                               <div className="flex gap-0.5">
                                 {row.seats.map((seat) => {
                                   // Determine status based on mode
