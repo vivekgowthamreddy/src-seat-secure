@@ -5,6 +5,7 @@ import { Film, Calendar, Clock, Users, Armchair, LogOut, ChevronRight } from "lu
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import srcLogo from "@/assets/src-logo.webp";
+import { ModeToggle } from "@/components/mode-toggle";
 import { apiClient, authHelper } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { User, Booking, Show, Movie } from "@/lib/types";
@@ -136,6 +137,7 @@ const StudentDashboard = () => {
           </Link>
 
           <div className="flex items-center gap-4">
+            <ModeToggle />
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-foreground">{user?.name}</p>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
@@ -171,10 +173,10 @@ const StudentDashboard = () => {
             transition={{ delay: 0.1, duration: 0.5 }}
             className="mb-8"
           >
-            <Card className="bg-primary text-white border-0 shadow-xl overflow-hidden relative">
+            <Card className="bg-primary text-primary-foreground border-0 shadow-xl overflow-hidden relative">
               <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <CardHeader className="pb-2 relative">
-                <div className="flex items-center gap-2 text-accent text-sm font-medium">
+                <div className="flex items-center gap-2 text-primary-foreground/90 text-sm font-medium">
                   <Armchair className="w-4 h-4" />
                   Your Allocated Seat
                 </div>
@@ -265,13 +267,11 @@ const StudentDashboard = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10"
+          className="grid grid-cols-2 md:grid-cols-2 gap-4 mb-10"
         >
           {[
             { label: "Total Bookings", value: bookings.length.toString(), icon: Film },
             { label: "Upcoming Shows", value: upcomingShows.length.toString(), icon: Calendar },
-            { label: "Seat History", value: "Clean", icon: Armchair },
-            { label: "Status", value: "Active", icon: Users },
           ].map((stat, index) => (
             <Card key={stat.label} className="border-border bg-card hover:shadow-md transition-shadow">
               <CardContent className="p-5">
@@ -297,7 +297,7 @@ const StudentDashboard = () => {
         >
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-2xl font-semibold text-foreground">
-              Available Movies
+              Available Movies <span className="text-muted-foreground ml-1">({upcomingShows.length})</span>
             </h2>
             <Button variant="ghost" asChild className="text-accent hover:text-accent">
               <Link to="/student/movies">
@@ -307,7 +307,7 @@ const StudentDashboard = () => {
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {upcomingShows.map((show, index) => {
               // Check if user has booked this show
               const userBooking = bookings.find(b => {
@@ -338,7 +338,7 @@ const StudentDashboard = () => {
                             alt={typeof show.movieId === 'object' && show.movieId ? (show.movieId as Movie).title : "Movie"}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
                           <div className="absolute bottom-0 left-0 right-0 p-4">
                             <p className="text-white font-display font-semibold text-lg leading-tight">
                               {typeof show.movieId === 'object' && show.movieId ? (show.movieId as Movie).title : "Movie"}
@@ -353,17 +353,17 @@ const StudentDashboard = () => {
                           </div>
                         </div>
                         <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-3">
                             <div>
                               <p className="text-xs text-muted-foreground mb-0.5">Available Seats</p>
                               <p className="font-semibold text-foreground">{show.totalSeats - show.bookedSeats} / {show.totalSeats}</p>
                             </div>
                             {userBooking ? (
-                              <Button size="sm" variant="outline" className="rounded-full border-accent text-accent hover:bg-accent hover:text-white">
+                              <Button size="sm" variant="outline" className="w-full rounded-full border-accent text-accent hover:bg-accent hover:text-white">
                                 Download Ticket
                               </Button>
                             ) : (
-                              <Button size="sm" className="rounded-full">Book Now</Button>
+                              <Button size="sm" className="w-full rounded-full">Book Now</Button>
                             )}
                           </div>
                         </CardContent>

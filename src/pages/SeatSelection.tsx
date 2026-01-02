@@ -148,23 +148,21 @@ const SeatSelection = () => {
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img src={heroImage} alt="SAC Auditorium" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-background/90" />
-      </div>
+      {/* Background Image Removed */}
+      <div className="absolute inset-0 z-0 bg-background" />
 
       <div className="relative z-10 flex flex-col min-h-screen">
-        <header className="border-b border-white/10">
+        <header className="border-b border-border">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" asChild>
+              <Button variant="ghost" size="icon" className="text-foreground hover:bg-muted" asChild>
                 <Link to={`/student/movie/${show.movieId}`}><ArrowLeft className="w-5 h-5" /></Link>
               </Button>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20">
+                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-border">
                   <img src={srcLogo} alt="SRC" className="w-full h-full object-cover" />
                 </div>
-                <span className="font-display font-semibold text-white">Select Seats</span>
+                <span className="font-display font-semibold text-foreground">Select Seats</span>
               </div>
             </div>
           </div>
@@ -175,7 +173,7 @@ const SeatSelection = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center mb-10">
             <div className="relative mx-auto max-w-xl">
               <div className="h-1.5 bg-accent rounded-full shadow-glow" />
-              <div className="flex items-center justify-center gap-2 text-white/50 text-sm mt-3 tracking-wide">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-3 tracking-wide">
                 <Monitor className="w-4 h-4" /><span>SCREEN</span>
               </div>
             </div>
@@ -186,7 +184,7 @@ const SeatSelection = () => {
             <div className="min-w-[700px] max-w-4xl mx-auto">
               {seatRows.map((row) => (
                 <div key={row.name} className={`flex items-center gap-3 ${row.name === 'H' ? 'mb-12' : 'mb-1.5'}`}>
-                  <span className="w-6 text-xs text-white/50 font-medium text-right">{row.name}</span>
+                  <span className="w-6 text-xs text-muted-foreground font-medium text-right">{row.name}</span>
                   <div className="flex-1 flex justify-center gap-1">
                     {row.seats.map((seat) => {
                       const status = getSeatStatus(seat.id);
@@ -201,9 +199,9 @@ const SeatSelection = () => {
                             className={`w-6 h-6 rounded text-[9px] font-medium transition-all duration-200 ${status === 'selected'
                               ? 'bg-accent text-white scale-110 shadow-lg ring-2 ring-accent/50'
                               : status === 'booked'
-                                ? 'bg-white/20 text-white/30 cursor-not-allowed'
+                                ? 'bg-secondary text-muted-foreground/50 cursor-not-allowed'
                                 : status === 'unavailable'
-                                  ? 'bg-destructive/50 text-white/50 cursor-not-allowed'
+                                  ? 'bg-destructive/50 text-white/70 cursor-not-allowed'
                                   : status === 'damaged'
                                     ? 'bg-destructive text-white cursor-not-allowed opacity-100 ring-1 ring-destructive/50'
                                     : 'bg-success hover:bg-success/80 text-white cursor-pointer hover:scale-105'
@@ -216,16 +214,16 @@ const SeatSelection = () => {
                       );
                     })}
                   </div>
-                  <span className="w-6 text-xs text-white/50 font-medium">{row.name}</span>
+                  <span className="w-6 text-xs text-muted-foreground font-medium">{row.name}</span>
                 </div>
               ))}
             </div>
           </motion.div>
 
           {/* Legend */}
-          <div className="flex justify-center gap-6 my-8 text-sm text-white/70 flex-wrap">
+          <div className="flex justify-center gap-6 my-8 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-success" /><span>Available</span></div>
-            <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-white/20" /><span>Booked</span></div>
+            <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-secondary" /><span>Booked</span></div>
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-destructive/50" /><span>Unavailable</span></div>
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-destructive" /><span>Damaged</span></div>
             <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-accent" /><span>Selected</span></div>

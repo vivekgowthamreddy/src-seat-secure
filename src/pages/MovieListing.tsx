@@ -137,7 +137,7 @@ const MovieListing = () => {
                         alt={movie.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/30 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
 
                       {/* Category Badge */}
                       {nextShow && (

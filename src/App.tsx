@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ThemeProvider } from "@/components/theme-provider";
 
 // Lazy load pages for performance
 // Lazy load pages for performance
@@ -31,33 +32,33 @@ const LoadingFallback = () => (
 const App = () => (
   <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              {/* Maintenance Mode Active for Public Routes */}
-              <Route path="/" element={<Maintenance />} />
-              <Route path="/student/*" element={<Maintenance />} />
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* Maintenance Mode disabled locally for testing */}
+                {/* <Route path="/" element={<Maintenance />} /> */}
+                {/* <Route path="/student/*" element={<Maintenance />} /> */}
 
-              {/* 
-              <Route path="/" element={<Index />} />
-              <Route path="/student/login" element={<StudentAuth />} />
-              <Route path="/student/dashboard" element={<StudentDashboard />} />
-              <Route path="/student/movies" element={<MovieListing />} />
-              <Route path="/student/movie/:id" element={<MovieDetails />} />
-              <Route path="/student/seat-selection/:showId" element={<SeatSelection />} />
-              <Route path="/student/booking-confirmation/:showId/:seatId" element={<BookingConfirmation />} />
-              */}
+                <Route path="/" element={<Index />} />
+                <Route path="/student/login" element={<StudentAuth />} />
+                <Route path="/student/dashboard" element={<StudentDashboard />} />
+                <Route path="/student/movies" element={<MovieListing />} />
+                <Route path="/student/movie/:id" element={<MovieDetails />} />
+                <Route path="/student/seat-selection/:showId" element={<SeatSelection />} />
+                <Route path="/student/booking-confirmation/:showId/:seatId" element={<BookingConfirmation />} />
 
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </GoogleOAuthProvider>
 );

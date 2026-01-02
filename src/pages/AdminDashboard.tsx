@@ -15,6 +15,7 @@ import srcLogo from "@/assets/src-logo.webp";
 import { apiClient, authHelper } from "@/lib/apiClient";
 import { TOTAL_SEATS, generateSeatLayout, getGapPosition, getGapClass } from "@/data/seatLayout";
 import { Movie, Show } from "@/lib/types";
+import { ModeToggle } from "@/components/mode-toggle";
 
 type AdminView = "dashboard" | "movies" | "shows" | "layout";
 
@@ -82,7 +83,7 @@ const AdminDashboard = () => {
         loadGlobalSeats();
       }
     } else {
-      if (activeView !== 'layout') setSelectedShow(null);
+      setSelectedShow(null);
     }
 
     return () => {
@@ -279,7 +280,10 @@ const AdminDashboard = () => {
             </div>
             <span className="font-display font-semibold text-foreground">SRC Admin</span>
           </div>
-          <Button variant="ghost" size="icon" asChild><Link to="/"><LogOut className="w-5 h-5" /></Link></Button>
+          <div className="flex items-center gap-2">
+            <ModeToggle />
+            <Button variant="ghost" size="icon" asChild><Link to="/"><LogOut className="w-5 h-5" /></Link></Button>
+          </div>
         </div>
       </header>
 
@@ -358,7 +362,7 @@ const AdminDashboard = () => {
                   const movie = typeof show.movieId === 'object' ? show.movieId as Movie : movies.find(m => m.id === show.movieId);
                   return (
                     <Card key={show.id} className="glass"><CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-4">{movie && <img src={movie.poster} alt="" className="w-12 h-18 object-cover rounded" />}<div><h3 className="font-semibold">{movie?.title || 'Unknown Movie'}</h3><p className="text-sm text-muted-foreground"><Calendar className="w-3 h-3 inline mr-1" />{show.date} <Clock className="w-3 h-3 inline mx-1" />{show.time} <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded text-xs">{show.category}</span></p></div></div>
+                      <div className="flex items-center gap-4">{movie && <img src={movie.poster} alt="" className="w-12 h-18 object-cover rounded" />}<div><h3 className="font-semibold">{movie?.title || 'Unknown Movie'}</h3><p className="text-sm text-muted-foreground"><Calendar className="w-3 h-3 inline mr-1" />{show.date} <Clock className="w-3 h-3 inline mx-1" />{show.time} <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded text-xs">{show.category}</span> <span className="ml-2 px-2 py-0.5 bg-secondary rounded text-xs">Booked: {show.bookedSeats || 0}</span></p></div></div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleDownloadReport(show.id)} title="Download Report">
                           <Download className="w-4 h-4" />

@@ -16,13 +16,10 @@ export class SeatsController {
       seats = await this.seatsService.findByShow(id);
     }
 
-    // Self-healing: if existing seats are missing the 'seatLabel' field (from old schema), regenerate them
+    // Check for malformed data but do not auto-regenerate to avoid loops
     const hasMissingId = seats && seats.some((s: any) => !s.seatLabel);
     if (hasMissingId) {
-      console.log(`[SeatsController] Found seats without ID for show ${id}. Regenerating...`);
-      await this.seatsService.deleteByShow(id);
-      await this.seatsService.generateSeats(id);
-      seats = await this.seatsService.findByShow(id);
+      console.warn(`[SeatsController] WARNING: Found seats without 'seatLabel' for show ${id}. Admin intervention required or manual regeneration.`);
     }
 
     if (!seats) throw new NotFoundException('Seats not found and could not be generated');

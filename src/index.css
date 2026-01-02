@@ -4,7 +4,79 @@
 
 @layer base {
   :root {
-    /* Dark Premium Theme - Matching Reference */
+    /* Light Mode - White & Blue Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+
+    /* Primary: Deep Sky Blue */
+    --primary: 195 100% 40%;
+    /* Slightly darker for contrast on white */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+
+    /* Accent: Deep Sky Blue */
+    --accent: 195 100% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Success - Keep Green */
+    --success: 150 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 195 100% 45%;
+
+    --radius: 0.75rem;
+
+    /* Seat States (Light Mode) */
+    --seat-available: 150 60% 45%;
+    --seat-booked: 195 100% 40%;
+    --seat-selected: 45 93% 47%;
+    --seat-unavailable: 0 0% 80%;
+    --seat-damaged: 0 84.2% 60.2%;
+
+    /* Light Mode Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(195 100% 40%) 0%, hsl(210 100% 50%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 96%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(195 100% 40% / 0.15) 0%, transparent 70%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 40px hsl(195 100% 40% / 0.2);
+    --shadow-glow-cyan: 0 0 40px hsl(195 100% 40% / 0.2);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark Premium Theme - Matching Reference (Blue) */
     --background: 240 10% 6%;
     --foreground: 0 0% 98%;
 
@@ -39,8 +111,6 @@
     --border: 240 8% 18%;
     --input: 240 8% 18%;
     --ring: 195 100% 50%;
-
-    --radius: 0.75rem;
 
     /* Seat States */
     --seat-available: 150 60% 45%;
