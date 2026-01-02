@@ -192,7 +192,10 @@ const MovieDetails = () => {
                 <div className="space-y-3">
                   {movieShows.map((show, index) => {
                     const userBooking = userBookings.find(b => {
+                      // Check for b.showId being null (deleted show)
+                      if (!b.showId) return false;
                       const showId = typeof b.showId === 'object' ? (b.showId as Show).id : b.showId;
+                      // Ensure showId is not null/undefined
                       return showId === show.id;
                     });
 
