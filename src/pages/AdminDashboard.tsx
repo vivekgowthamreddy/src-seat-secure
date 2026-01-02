@@ -60,19 +60,34 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+
     if (activeView === 'layout') {
       if (selectedShow) {
-        // Load specific show seats
+        // Initial Load
         loadShowSeats(selectedShow.id);
+
+        // Polling for real-time updates (every 3 seconds)
+        interval = setInterval(async () => {
+          // specific lightweight fetch without loading spinner
+          try {
+            const rows = await apiClient.getSeats(selectedShow.id);
+            const flatSeats = rows.flatMap((row: any) => row.seats);
+            setShowSeats(flatSeats);
+          } catch (e) { console.error("Polling failed", e); }
+        }, 3000);
+
       } else {
         // Load global seats
         loadGlobalSeats();
       }
     } else {
-      // Clear selection when leaving layout tab (unless navigating back from within layout, handled by arrow button)
-      // Actually we want to keep selectedShow null if we are just switching tabs normally
       if (activeView !== 'layout') setSelectedShow(null);
     }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [activeView, selectedShow]);
 
   const loadShowSeats = async (showId: string) => {
