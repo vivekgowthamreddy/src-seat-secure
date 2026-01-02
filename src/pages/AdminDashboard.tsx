@@ -267,7 +267,15 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-6">
         <nav className="flex gap-2 mb-8 overflow-x-auto pb-2">
           {navItems.map((item) => (
-            <Button key={item.id} variant={activeView === item.id ? "default" : "ghost"} onClick={() => setActiveView(item.id)} className={activeView === item.id ? "bg-gradient-primary shadow-glow" : ""}>
+            <Button
+              key={item.id}
+              variant={activeView === item.id ? "default" : "ghost"}
+              onClick={() => {
+                setActiveView(item.id);
+                if (item.id === 'layout') setSelectedShow(null);
+              }}
+              className={activeView === item.id ? "bg-gradient-primary shadow-glow" : ""}
+            >
               <item.icon className="w-4 h-4 mr-2" />{item.label}
             </Button>
           ))}
