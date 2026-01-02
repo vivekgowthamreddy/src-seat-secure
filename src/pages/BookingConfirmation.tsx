@@ -13,9 +13,9 @@ const BookingConfirmation = () => {
   const { showId, seatId } = useParams();
   const [show, setShow] = useState<Show | null>(null);
   const [movie, setMovie] = useState<Movie | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(null); // State for actual booking
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const bookingId = `SRC${Date.now().toString().slice(-8)}`;
 
   useEffect(() => {
     const loadData = async () => {
@@ -26,6 +26,7 @@ const BookingConfirmation = () => {
       }
       try {
         const token = authHelper.getToken();
+        if (!token) return;
 
         const showData = await apiClient.getShow(showId);
         setShow(showData);
@@ -33,10 +34,21 @@ const BookingConfirmation = () => {
         if (showData && typeof showData.movieId === 'object') {
           setMovie(showData.movieId as Movie);
         } else if (showData && typeof showData.movieId === 'string') {
-          // Fallback if somehow not populated (shouldn't happen with updated backend)
           const movieData = await apiClient.getMovie(showData.movieId);
           setMovie(movieData);
         }
+
+        // Fetch user's bookings to find the actual Booking ID
+        const myBookings = await apiClient.getBookings(token);
+        const thisBooking = myBookings.find(b => {
+          const bShowId = typeof b.showId === 'object' ? (b.showId as Show).id : b.showId;
+          return bShowId === showId && b.seats.includes(seatId || "");
+        });
+
+        if (thisBooking) {
+          setBooking(thisBooking);
+        }
+
       } catch (err) {
         setError("Failed to load booking details");
         console.error(err);
@@ -45,7 +57,28 @@ const BookingConfirmation = () => {
       }
     };
     loadData();
-  }, [showId]);
+  }, [showId, seatId]);
+
+  const bookingIdDisplay = booking ? `SRC-${booking.id.slice(-6).toUpperCase()}` : "Processing...";
+
+  // Helper for Date/Time
+  const getDateDisplay = () => {
+    if (!show) return "";
+    const dateStr = show.date || (show as any).startTime; // Fallback
+    if (!dateStr) return "N/A";
+    try {
+      return new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' });
+    } catch (e) { return "Invalid Date"; }
+  };
+
+  const getTimeDisplay = () => {
+    if (!show) return "";
+    if (show.time) return show.time;
+    if ((show as any).startTime) {
+      return new Date((show as any).startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    return "N/A";
+  };
 
 
   if (loading) {
@@ -92,11 +125,11 @@ const BookingConfirmation = () => {
               </div>
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-muted-foreground" />
-                <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold text-foreground">{new Date(show.date).toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}</p></div>
+                <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold text-foreground">{getDateDisplay()}</p></div>
               </div>
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-muted-foreground" />
-                <div><p className="text-xs text-muted-foreground">Time</p><p className="font-semibold text-foreground">{show.time}</p></div>
+                <div><p className="text-xs text-muted-foreground">Time</p><p className="font-semibold text-foreground">{getTimeDisplay()}</p></div>
               </div>
               <div className="flex items-center gap-3">
                 <Armchair className="w-5 h-5 text-muted-foreground" />
@@ -105,7 +138,7 @@ const BookingConfirmation = () => {
 
               <div className="border-t border-dashed pt-4 mt-4">
                 <div className="flex items-center justify-between">
-                  <div><p className="text-xs text-muted-foreground">Booking ID</p><p className="font-mono text-sm font-semibold text-foreground">{bookingId}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Booking ID</p><p className="font-mono text-sm font-semibold text-foreground">{bookingIdDisplay}</p></div>
                   <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center"><QrCode className="w-10 h-10 text-muted-foreground" /></div>
                 </div>
               </div>
