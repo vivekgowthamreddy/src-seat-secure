@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Lazy load pages for performance
+// Lazy load pages for performance
 const Index = lazy(() => import("./pages/Index"));
 const StudentAuth = lazy(() => import("./pages/StudentAuth"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -17,6 +18,7 @@ const SeatSelection = lazy(() => import("./pages/SeatSelection"));
 const BookingConfirmation = lazy(() => import("./pages/BookingConfirmation"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Maintenance = lazy(() => import("./pages/Maintenance"));
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,11 @@ const App = () => (
         <BrowserRouter>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
+              {/* Maintenance Mode Active for Public Routes */}
+              <Route path="/" element={<Maintenance />} />
+              <Route path="/student/*" element={<Maintenance />} />
+
+              {/* 
               <Route path="/" element={<Index />} />
               <Route path="/student/login" element={<StudentAuth />} />
               <Route path="/student/dashboard" element={<StudentDashboard />} />
@@ -42,6 +49,8 @@ const App = () => (
               <Route path="/student/movie/:id" element={<MovieDetails />} />
               <Route path="/student/seat-selection/:showId" element={<SeatSelection />} />
               <Route path="/student/booking-confirmation/:showId/:seatId" element={<BookingConfirmation />} />
+              */}
+
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
