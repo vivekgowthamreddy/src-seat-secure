@@ -41,7 +41,14 @@ const BookingConfirmation = () => {
         // Fetch user's bookings to find the actual Booking ID
         const myBookings = await apiClient.getBookings(token);
         const thisBooking = myBookings.find(b => {
-          const bShowId = typeof b.showId === 'object' ? (b.showId as Show).id : b.showId;
+          // Robust check for showId, which might be populated object or string ID
+          let bShowId = "";
+          if (b.showId && typeof b.showId === 'object' && 'id' in b.showId) {
+            bShowId = (b.showId as Show).id;
+          } else if (typeof b.showId === 'string') {
+            bShowId = b.showId;
+          }
+
           return bShowId === showId && b.seats.includes(seatId || "");
         });
 
