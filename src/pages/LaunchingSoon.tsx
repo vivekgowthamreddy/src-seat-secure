@@ -39,7 +39,7 @@ const LaunchingSoon = () => {
                 <div className="space-y-6">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
                         <Rocket className="w-4 h-4" />
-                        <span>Launching Tomorrow</span>
+                        <span>Launching Soon</span>
                     </div>
 
                     <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/50">
@@ -52,14 +52,7 @@ const LaunchingSoon = () => {
                     </p>
 
                     <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Button variant="outline" className="rounded-full" asChild>
-                            <Link to="/admin/login">Admin Access</Link>
-                        </Button>
-                        {/* 
-                        <Button className="rounded-full px-8 py-6 text-lg shadow-lg hover:shadow-primary/25 transition-all" asChild>
-                           <Link to="/student/login">Student Login (Preview)</Link>
-                        </Button>
-                        */}
+                        {/* Admin Access Removed for Launch Mode */}
                     </div>
                 </div>
 
