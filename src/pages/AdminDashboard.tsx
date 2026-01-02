@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Film, Users, AlertTriangle, Armchair, LogOut, Plus,
-  Trash2, Edit2, Save, X, Calendar, Clock, Eye, Download
+  Trash2, Edit2, Save, X, Calendar, Clock, Eye, Download, ArrowLeft
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,8 @@ const AdminDashboard = () => {
   const [showForm, setShowForm] = useState({ movieId: "", date: "", time: "", category: "boys" as "boys" | "girls" | "all" });
 
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
+  const [showSeats, setShowSeats] = useState<any[]>([]); // New State for show specific seats
+
   // Global Seat Management State
   const [globalSeats, setGlobalSeats] = useState<any[]>([]);
   const [loadingGlobalSeats, setLoadingGlobalSeats] = useState(false);
@@ -58,9 +61,31 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (activeView === 'layout') {
-      loadGlobalSeats();
+      if (selectedShow) {
+        // Load specific show seats
+        loadShowSeats(selectedShow.id);
+      } else {
+        // Load global seats
+        loadGlobalSeats();
+      }
+    } else {
+      // Clear selection when leaving layout tab (unless navigating back from within layout, handled by arrow button)
+      // Actually we want to keep selectedShow null if we are just switching tabs normally
+      if (activeView !== 'layout') setSelectedShow(null);
     }
-  }, [activeView]);
+  }, [activeView, selectedShow]);
+
+  const loadShowSeats = async (showId: string) => {
+    setLoadingGlobalSeats(true);
+    try {
+      const seats = await apiClient.getSeats(showId);
+      setShowSeats(seats);
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to load show seats", variant: "destructive" });
+    } finally {
+      setLoadingGlobalSeats(false);
+    }
+  };
 
   const loadGlobalSeats = async () => {
     setLoadingGlobalSeats(true);
@@ -321,26 +346,47 @@ const AdminDashboard = () => {
             </motion.div>
           )}
 
+
           {activeView === "layout" && (
             <motion.div key="layout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h1 className="font-display text-2xl font-bold mb-6">Manage Auditorium Layout (Global)</h1>
-              <p className="text-muted-foreground mb-4">
-                Mark seats as "Damaged" to make them unavailable for ALL current and future movies.
-                <br />
-                <span className="text-xs">Click a seat to toggle its status.</span>
-              </p>
+              <div className="flex items-center gap-3 mb-6">
+                {selectedShow && (
+                  <Button variant="outline" size="icon" onClick={() => { setSelectedShow(null); setActiveView("shows"); }}>
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                )}
+                <div>
+                  <h1 className="font-display text-2xl font-bold">{selectedShow ? "Track Show Bookings" : "Manage Auditorium Layout (Global)"}</h1>
+                  {selectedShow && <p className="text-muted-foreground">{selectedShow.date} | {selectedShow.time} ({selectedShow.category})</p>}
+                </div>
+              </div>
+
+              {!selectedShow && (
+                <p className="text-muted-foreground mb-4">
+                  Mark seats as "Damaged" to make them unavailable for ALL current and future movies.
+                  <br />
+                  <span className="text-xs">Click a seat to toggle its status.</span>
+                </p>
+              )}
 
               <Card className="glass">
                 <CardHeader>
                   <CardTitle>
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-success/70" /> Available</div>
-                      <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-destructive" /> Damaged</div>
+                      {selectedShow ? (
+                        <>
+                          <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-primary" /> Booked</div>
+                          <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-destructive/50" /> Damaged</div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-destructive" /> Damaged</div>
+                      )}
                     </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
-                  {loadingGlobalSeats ? <div className="p-8 text-center">Loading global layout...</div> : (
+                  {loadingGlobalSeats ? <div className="p-8 text-center">Loading layout...</div> : (
                     <div className="min-w-[700px] flex justify-center">
                       <div className="inline-block">
                         <div className="text-center mb-6"><div className="h-2 bg-gradient-primary rounded-full mx-auto w-3/4 mb-1" /><span className="text-xs text-muted-foreground">SCREEN</span></div>
@@ -350,21 +396,62 @@ const AdminDashboard = () => {
                               <span className="w-5 text-xs text-muted-foreground text-right mr-2">{row.name}</span>
                               <div className="flex gap-0.5">
                                 {row.seats.map((seat) => {
-                                  // Check functionality
-                                  const globalStatus = globalSeats.find(s => s.seatLabel === seat.id);
-                                  const isDamaged = globalStatus?.isDamaged || false;
+                                  // Determine status based on mode
+                                  let statusClass = "bg-success/70 text-white";
+                                  let title = "Available";
+                                  let disabled = false;
+
+                                  if (selectedShow) {
+                                    // Show Booking Mode
+                                    // We need showSeats state which isn't implemented here yet. 
+                                    // Let's rely on a new state `showSeats` populated when `selectedShow` changes.
+                                    const seatData = showSeats.find(s => s.seatLabel === seat.id);
+                                    if (seatData) {
+                                      if (seatData.status === 'booked') {
+                                        statusClass = "bg-primary text-white";
+                                        title = `Booked by ${seatData.bookedBy || 'User'}`;
+                                      } else if (seatData.status === 'damaged') {
+                                        statusClass = "bg-destructive/50 text-white";
+                                        title = "Damaged";
+                                      } else if (seatData.status === 'unavailable') {
+                                        statusClass = "bg-muted text-muted-foreground";
+                                        title = "Unavailable";
+                                      }
+                                    }
+                                    disabled = true; // Just viewing
+                                  } else {
+                                    // Global Edit Mode
+                                    const globalStatus = globalSeats.find(s => s.seatLabel === seat.id);
+                                    const isDamaged = globalStatus?.isDamaged || false;
+                                    if (isDamaged) {
+                                      statusClass = "bg-destructive text-white ring-2 ring-destructive/50";
+                                      title = "Damaged";
+                                    } else {
+                                      statusClass = "bg-success/70 hover:bg-success text-white";
+                                      title = "Good Condition";
+                                    }
+                                  }
+
                                   const gapPos = getGapPosition(row.name);
 
                                   return (
                                     <div key={seat.id} className="flex gap-0.5">
-                                      <button
-                                        onClick={() => setSeatToToggle({ label: seat.id, currentDamaged: isDamaged })}
-                                        className={`w-6 h-6 rounded text-[9px] transition-all hover:scale-110 
-                                                ${isDamaged ? "bg-destructive text-white ring-2 ring-destructive/50" : "bg-success/70 hover:bg-success text-white"}`}
-                                        title={`${seat.id} - ${isDamaged ? "Damaged" : "Good Condtion"}`}
-                                      >
-                                        {seat.number}
-                                      </button>
+                                      {selectedShow ? (
+                                        <div
+                                          className={`w-6 h-6 rounded text-[9px] flex items-center justify-center ${statusClass}`}
+                                          title={`${seat.id} - ${title}`}
+                                        >
+                                          {seat.number}
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => setSeatToToggle({ label: seat.id, currentDamaged: statusClass.includes('destructive') })}
+                                          className={`w-6 h-6 rounded text-[9px] transition-all hover:scale-110 ${statusClass}`}
+                                          title={`${seat.id} - ${title}`}
+                                        >
+                                          {seat.number}
+                                        </button>
+                                      )}
                                       {seat.number === gapPos && <div className={getGapClass(row.name)} />}
                                     </div>
                                   );
@@ -381,7 +468,7 @@ const AdminDashboard = () => {
               </Card>
 
               {/* Confirmation Dialog (Simple Modal Implementation) */}
-              {seatToToggle && (
+              {seatToToggle && !selectedShow && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
