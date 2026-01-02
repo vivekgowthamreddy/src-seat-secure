@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 
 const LaunchingSoon = () => {
     return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-background to-background"></div>
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-slate-950 to-slate-950"></div>
                 {/* Floating Stars */}
                 {[...Array(20)].map((_, i) => (
                     <motion.div
@@ -31,7 +31,7 @@ const LaunchingSoon = () => {
                 transition={{ duration: 0.8 }}
                 className="z-10 text-center max-w-2xl mx-auto"
             >
-                <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-card border-4 border-primary/20 flex items-center justify-center shadow-2xl relative group">
+                <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-slate-900 border-4 border-primary/20 flex items-center justify-center shadow-2xl relative group">
                     <div className="absolute inset-0 rounded-full border border-white/10 animate-pulse"></div>
                     <img src={srcLogo} alt="SRC Logo" className="w-full h-full object-cover rounded-full" />
                 </div>
@@ -42,12 +42,12 @@ const LaunchingSoon = () => {
                         <span>Launching Soon</span>
                     </div>
 
-                    <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/50">
+                    <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-br from-white to-white/50">
                         Get Ready for <br />
                         <span className="text-primary">SRC Showtime</span>
                     </h1>
 
-                    <p className="text-xl text-muted-foreground leading-relaxed max-w-lg mx-auto">
+                    <p className="text-xl text-slate-400 leading-relaxed max-w-lg mx-auto">
                         The ultimate student movie seat booking experience is arriving. Secure your favorite spot with just a click.
                     </p>
 
@@ -56,7 +56,7 @@ const LaunchingSoon = () => {
                     </div>
                 </div>
 
-                <p className="mt-16 text-sm text-muted-foreground/50 font-medium tracking-widest uppercase">
+                <p className="mt-16 text-sm text-slate-600 font-medium tracking-widest uppercase">
                     Student Activity Center • RGUKT
                 </p>
             </motion.div>
