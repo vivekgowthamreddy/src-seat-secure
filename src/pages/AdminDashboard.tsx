@@ -78,8 +78,11 @@ const AdminDashboard = () => {
   const loadShowSeats = async (showId: string) => {
     setLoadingGlobalSeats(true);
     try {
-      const seats = await apiClient.getSeats(showId);
-      setShowSeats(seats);
+      const rows = await apiClient.getSeats(showId);
+      // Flatten the rows structure to get a simple array of seat objects
+      // The API returns [{ name: 'A', seats: [{ id: 'A1', ... }] }, ...]
+      const flatSeats = rows.flatMap((row: any) => row.seats);
+      setShowSeats(flatSeats);
     } catch (err) {
       toast({ title: "Error", description: "Failed to load show seats", variant: "destructive" });
     } finally {
@@ -100,8 +103,9 @@ const AdminDashboard = () => {
   };
 
 
-
   const totalBookedSeats = shows.reduce((acc, show) => acc + (show.bookedSeats || 0), 0);
+
+
 
   const handleSaveMovie = async () => {
     if (!movieForm.title || !movieForm.poster) {
@@ -411,9 +415,8 @@ const AdminDashboard = () => {
 
                                   if (selectedShow) {
                                     // Show Booking Mode
-                                    // We need showSeats state which isn't implemented here yet. 
-                                    // Let's rely on a new state `showSeats` populated when `selectedShow` changes.
-                                    const seatData = showSeats.find(s => s.seatLabel === seat.id);
+                                    // We rely on `showSeats` which is now populated and flattened
+                                    const seatData = showSeats.find(s => s.id === seat.id);
                                     if (seatData) {
                                       if (seatData.status === 'booked') {
                                         statusClass = "bg-primary text-white";
