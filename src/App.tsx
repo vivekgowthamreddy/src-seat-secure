@@ -20,6 +20,7 @@ const BookingConfirmation = lazy(() => import("./pages/BookingConfirmation"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Maintenance = lazy(() => import("./pages/Maintenance"));
+const LaunchingSoon = lazy(() => import("./pages/LaunchingSoon"));
 
 const queryClient = new QueryClient();
 
@@ -43,7 +44,8 @@ const App = () => (
                 {/* <Route path="/" element={<Maintenance />} /> */}
                 {/* <Route path="/student/*" element={<Maintenance />} /> */}
 
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<LaunchingSoon />} />
+                {/* <Route path="/" element={<Index />} /> */}
                 <Route path="/student/login" element={<StudentAuth />} />
                 <Route path="/student/dashboard" element={<StudentDashboard />} />
                 <Route path="/student/movies" element={<MovieListing />} />
