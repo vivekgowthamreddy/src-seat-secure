@@ -33,6 +33,12 @@ const Footer = () => {
           <p className="text-sm text-white/40">
             This platform ensures seat safety, discipline, and accountability during SAC movie screenings.
           </p>
+          <div className="mt-4 flex flex-col md:flex-row items-center justify-center gap-2 text-xs text-white/30">
+            <span>Developed by:</span>
+            <span className="font-medium text-white/50">Vivek Reddy</span>
+            <span className="hidden md:inline">•</span>
+            <span className="font-medium text-white/50">Lokeshwar Reddy</span>
+          </div>
         </div>
       </div>
     </motion.footer>
