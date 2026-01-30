@@ -25,7 +25,7 @@ const Footer = () => {
 
           <div className="text-center md:text-right">
             <p className="text-sm text-white/50">SAC Movie Seat Accountability System</p>
-            <p className="text-xs text-white/30 mt-1">© {new Date().getFullYear()} SRC. All rights reserved.</p>
+            {/* <p className="text-xs text-white/30 mt-1">© {new Date().getFullYear()} SRC. All rights reserved.</p> */}
           </div>
         </div>
 
