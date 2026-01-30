@@ -2,6 +2,15 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 export const apiClient = {
+  // Warm up the backend (Render cold start)
+  warmUp: async () => {
+    try {
+      fetch(`${API_BASE}/movies`).catch(() => { });
+    } catch (e) {
+      // Ignore errors, strictly for wakeup
+    }
+  },
+
   // Auth
   register: async (email: string, password: string, name: string, gender: string) => {
     const res = await fetch(`${API_BASE}/auth/register`, {

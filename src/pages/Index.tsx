@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Shield, Users, CheckCircle, AlertTriangle, ArrowRight, Film, Armchair, Mail } from "lucide-react";
@@ -6,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import heroImage from "@/assets/sac-auditorium-real.webp";
 import { TOTAL_SEATS } from "@/data/seatLayout";
+import { apiClient } from "@/lib/apiClient";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 40 },
@@ -22,6 +24,11 @@ const staggerContainer = {
 };
 
 const Index = () => {
+  useEffect(() => {
+    // Ping backend to wake it up (Render Free Tier)
+    apiClient.warmUp();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header variant="landing" />

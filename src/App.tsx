@@ -8,7 +8,6 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "@/components/theme-provider";
 
 // Lazy load pages for performance
-// Lazy load pages for performance
 const Index = lazy(() => import("./pages/Index"));
 const StudentAuth = lazy(() => import("./pages/StudentAuth"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -39,10 +38,6 @@ const App = () => (
           <BrowserRouter>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
-                {/* Maintenance Mode disabled locally for testing */}
-                {/* <Route path="/" element={<Maintenance />} /> */}
-                {/* <Route path="/student/*" element={<Maintenance />} /> */}
-
                 <Route path="/" element={<Index />} />
                 <Route path="/student/login" element={<StudentAuth />} />
                 <Route path="/student/dashboard" element={<StudentDashboard />} />
