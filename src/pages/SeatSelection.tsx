@@ -37,13 +37,6 @@ const SeatSelection = () => {
         setMovie(movieData);
         const seatsData = await apiClient.getSeats(showId || "");
 
-        // Force Block Row R (Client-side override)
-        seatsData.forEach(row => {
-          if (row.name === 'R') {
-            row.seats.forEach(s => s.status = 'unavailable');
-          }
-        });
-
         setSeatRows(seatsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load data");

@@ -61,7 +61,7 @@ export const generateSeatLayout = (): Row[] => {
         id: `${rowName}${i}`,
         row: rowName,
         number: i,
-        status: rowName === 'R' ? 'unavailable' : 'available',
+        status: 'available',
       });
     }
 
@@ -72,7 +72,7 @@ export const generateSeatLayout = (): Row[] => {
   });
 };
 
-export const TOTAL_SEATS = 600;
+export const TOTAL_SEATS = ROWS.reduce((acc, row) => acc + getSeatsForRow(row), 0);
 // A-L: 12 rows * 38 = 456 seats
-// M-Q: 5 rows * 34 = 170 seats
-// Total count adjusted to 600 for display (last row R blocked)
+// M-R: 6 rows * 34 = 204 seats
+// Total: 660 seats

@@ -187,7 +187,7 @@ const AdminDashboard = () => {
     try {
       await apiClient.createShow(token, {
         movieId: showForm.movieId,
-        startTime: `${showForm.date}T${showForm.time}:00Z`,
+        startTime: new Date(`${showForm.date}T${showForm.time}`).toISOString(),
         theaterName: "SAC Auditorium",
         category: showForm.category,
         totalSeats: TOTAL_SEATS

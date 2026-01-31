@@ -74,7 +74,7 @@ const StudentDashboard = () => {
             if (!currentUserData) return true;
             if (currentUserData.role === 'admin') return true;
 
-            const gender = currentUserData.gender?.toLowerCase();
+            const gender = currentUserData.gender?.toLowerCase().trim();
 
             if (gender === 'male') {
               return show.category === 'boys' || show.category === 'all';
@@ -217,7 +217,7 @@ const StudentDashboard = () => {
                           if (show.time) return show.time;
                           if (show.startTime) {
                             const d = new Date(show.startTime);
-                            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
                           }
                           return 'Time N/A';
                         })()}

@@ -49,7 +49,7 @@ const MovieListing = () => {
     if (!user) return true; // Should ideally redirect to login
     if (user.role === 'admin') return true;
 
-    const gender = user.gender?.toLowerCase();
+    const gender = user.gender?.toLowerCase().trim();
 
     if (gender === 'male') {
       return show.category === 'boys' || show.category === 'all';
